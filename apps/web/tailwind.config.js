@@ -23,6 +23,20 @@ module.exports = {
           purple: '#CBA6F7',
           teal: '#94E2D5',
         },
+        // Landing-page specific palette
+        land: {
+          bg: '#080810',
+          card: '#0E0E1A',
+          border: '#1A1A2E',
+          purple: '#7C3AED',
+          'purple-light': '#A855F7',
+          'purple-dim': '#2D1B69',
+          'purple-glow': '#4C1D95',
+          muted: '#6B7280',
+          subtle: '#9CA3AF',
+          green: '#22C55E',
+          'green-dim': '#166534',
+        },
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
