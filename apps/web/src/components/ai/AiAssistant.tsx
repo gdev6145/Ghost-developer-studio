@@ -52,7 +52,7 @@ export function AiAssistant({ workspaceId }: AiAssistantProps) {
       role: 'user',
       content,
       timestamp: new Date().toISOString(),
-      contextFileId: activeTabId ?? undefined,
+      ...(activeTabId !== null ? { contextFileId: activeTabId } : {}),
     }
 
     setMessages(prev => [...prev, userMsg])

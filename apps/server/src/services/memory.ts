@@ -80,7 +80,7 @@ export class WorkspaceMemoryService {
       orderBy: { timestamp: 'desc' },
       take: limit,
     })
-    return dbEvents.map(e => ({
+    return dbEvents.map((e: { id: string; type: string; workspaceId: string; actorId: string | null; timestamp: Date; payload: unknown }) => ({
       id: e.id,
       type: e.type as GhostEventType,
       workspaceId: e.workspaceId,

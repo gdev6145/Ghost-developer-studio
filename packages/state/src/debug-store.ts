@@ -13,20 +13,13 @@ interface DebugStoreState extends DebugState {
   reset: () => void
 }
 
-const initialState: DebugState = {
+export const useDebugStore = create<DebugStoreState>()((set) => ({
   isPaused: false,
-  pausedFileId: undefined,
-  pausedLine: undefined,
-  pausedReason: undefined,
   breakpoints: [],
-}
-
-export const useDebugStore = create<DebugStoreState>()((set, get) => ({
-  ...initialState,
 
   setBreakpoint: bp =>
     set(state => {
-      const existing = state.breakpoints.findIndex(b => b.id === bp.id)
+      const existing = state.breakpoints.findIndex((b: Breakpoint) => b.id === bp.id)
       if (existing >= 0) {
         const updated = [...state.breakpoints]
         updated[existing] = bp
@@ -37,21 +30,37 @@ export const useDebugStore = create<DebugStoreState>()((set, get) => ({
 
   clearBreakpoint: breakpointId =>
     set(state => ({
-      breakpoints: state.breakpoints.filter(b => b.id !== breakpointId),
+      breakpoints: state.breakpoints.filter((b: Breakpoint) => b.id !== breakpointId),
     })),
 
   clearAllBreakpoints: fileId =>
     set(state => ({
       breakpoints: fileId
-        ? state.breakpoints.filter(b => b.fileId !== fileId)
+        ? state.breakpoints.filter((b: Breakpoint) => b.fileId !== fileId)
         : [],
     })),
 
   setPaused: (pausedFileId, pausedLine, pausedReason) =>
-    set({ isPaused: true, pausedFileId, pausedLine, pausedReason }),
+    // exactOptionalPropertyTypes requires the cast since pausedReason may be undefined at callsite
+    set({ isPaused: true, pausedFileId, pausedLine, ...(pausedReason !== undefined ? { pausedReason } : {}) } as Partial<DebugStoreState>),
 
-  setResumed: () =>
-    set({ isPaused: false, pausedFileId: undefined, pausedLine: undefined, pausedReason: undefined }),
+  setResumed: () => {
+    set(state => {
+      const next = { ...state, isPaused: false }
+      delete next.pausedFileId
+      delete next.pausedLine
+      delete next.pausedReason
+      return next
+    })
+  },
 
-  reset: () => set(initialState),
+  reset: () => {
+    set(state => {
+      const next = { ...state, isPaused: false, breakpoints: [] }
+      delete next.pausedFileId
+      delete next.pausedLine
+      delete next.pausedReason
+      return next
+    })
+  },
 }))

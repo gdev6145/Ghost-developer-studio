@@ -281,7 +281,7 @@ export function useSendBreakpoint(
         filePath,
         line,
         column: 0,
-        condition,
+        ...(condition !== undefined ? { condition } : {}),
         userId,
         color: getCollaboratorColor(userId),
         createdAt: new Date().toISOString(),

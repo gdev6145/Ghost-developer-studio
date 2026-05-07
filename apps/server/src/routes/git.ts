@@ -61,12 +61,12 @@ export async function registerGitRoutes(app: FastifyInstance): Promise<void> {
     try {
       // Attempt to read live git log from disk
       const commits = await readGitLog(repoPath, limit)
-      return reply.send({ commits, branches: branches.map(b => b.name) })
+      return reply.send({ commits, branches: branches.map((b: { name: string }) => b.name) })
     } catch {
       // Repo not cloned yet — return branch metadata only
       return reply.send({
         commits: [],
-        branches: branches.map(b => b.name),
+        branches: branches.map((b: { name: string }) => b.name),
         message: 'Repository not yet cloned. Commit history will appear after cloning.',
       })
     }

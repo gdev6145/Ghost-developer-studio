@@ -47,7 +47,7 @@ export async function registerReplayRoutes(app: FastifyInstance): Promise<void> 
     ])
 
     return reply.send({
-      events: events.map(e => ({
+      events: events.map((e: { id: string; type: string; workspaceId: string; actorId: string | null; timestamp: Date; payload: unknown }) => ({
         id: e.id,
         type: e.type,
         workspaceId: e.workspaceId,
