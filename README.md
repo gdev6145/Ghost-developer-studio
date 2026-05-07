@@ -99,6 +99,33 @@ This repository will gradually expand to include:
 - Contribution standards and workflow conventions
 - Implementation modules for core platform capabilities
 
+## Design Principles
+
+The project direction is guided by a set of practical principles:
+
+- **Collaborative by default:** core workflows should support pair and team development out of the box
+- **Context in one place:** code, runtime, review, and communication should stay connected
+- **Secure shared access:** collaboration must preserve repository and environment safety boundaries
+- **Incremental delivery:** capabilities should be introduced in stages with clear value at each step
+
+## Success Signals
+
+As the platform matures, progress can be measured through:
+
+- Faster cycle time from issue to merged change
+- Reduced setup time for new collaborators joining active workspaces
+- Higher quality review loops through contextual, in-workflow feedback
+- Improved team visibility through activity and collaboration analytics
+
+## Community and Feedback
+
+Early input is valuable while architecture and workflows are still forming.  
+If you want to influence project direction, open issues for:
+
+- Feature proposals and collaboration pain points
+- Developer workflow expectations for teams of different sizes
+- Integration priorities across source control, CI/CD, and runtime tooling
+
 ## Repository Purpose
 
 This repository represents the project foundation and public-facing information for Ghost Developer Studio.  
