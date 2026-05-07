@@ -27,7 +27,7 @@ export function TerminalPane({ workspaceId, collab }: TerminalPaneProps) {
 
   const termContainerRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const xtermRef = useRef<Map<string, any>>(new Map())
+  const terminalInstancesRef = useRef<Map<string, any>>(new Map())
   const cleanupRef = useRef<(() => void) | null>(null)
 
   // ─── Create new terminal session ────────────────────────────────────────
@@ -117,7 +117,7 @@ export function TerminalPane({ workspaceId, collab }: TerminalPaneProps) {
       fitAddon.fit()
 
       // Store the xterm instance
-      xtermRef.current.set(activeTerminalId, { term, fitAddon })
+      terminalInstancesRef.current.set(activeTerminalId, { term, fitAddon })
 
       // User input → send to server PTY
       term.onData((data: string) => {
@@ -181,7 +181,7 @@ export function TerminalPane({ workspaceId, collab }: TerminalPaneProps) {
         resizeObserver.disconnect()
         collab.current?.socket?.off('terminal', handleTerminalMessage as (msg: unknown) => void)
         term.dispose()
-        xtermRef.current.delete(activeTerminalId)
+        terminalInstancesRef.current.delete(activeTerminalId)
       }
     })()
 

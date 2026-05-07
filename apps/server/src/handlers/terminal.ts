@@ -1,19 +1,13 @@
 import type { Server as SocketIOServer, Socket } from 'socket.io'
 import type { EventDispatcher } from '@ghost/events'
 import type { WsTerminalCreate, WsTerminalData, WsTerminalResize, WsTerminalClose } from '@ghost/protocol'
-import { generateId, now } from '@ghost/shared'
+import { now } from '@ghost/shared'
+import type { IPty, NodePtyModule } from './pty-types'
 
-// node-pty is an optional native module — import lazily to avoid crashes when
-// build tools are not present (e.g., during tests or lightweight CI).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IPty = { write: (data: string) => void; resize: (cols: number, rows: number) => void; kill: () => void; onData: (cb: (data: string) => void) => void; onExit: (cb: (e: { exitCode: number }) => void) => void }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type NodePty = { spawn: (shell: string, args: string[], opts: Record<string, unknown>) => IPty }
-
-let pty: NodePty | null = null
+let pty: NodePtyModule | null = null
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  pty = require('node-pty') as NodePty
+  pty = require('node-pty') as NodePtyModule
 } catch {
   console.warn('[terminal] node-pty not available — terminal feature disabled')
 }

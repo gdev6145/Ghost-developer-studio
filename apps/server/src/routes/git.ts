@@ -22,6 +22,15 @@ import { db } from '@ghost/database'
 
 const gitService = new GitService(eventBus)
 
+/**
+ * Root directory where workspace repositories are cloned.
+ * Configurable via GHOST_REPOS_PATH environment variable.
+ * Defaults to /tmp/ghost-repos for development; set a persistent path in production.
+ */
+function getReposRoot(): string {
+  return process.env['GHOST_REPOS_PATH'] ?? '/tmp/ghost-repos'
+}
+
 /** Resolve workspace repo path from the workspace record or a convention. */
 async function resolveRepoPath(workspaceId: string): Promise<string | null> {
   const workspace = await db.workspace.findUnique({
@@ -29,8 +38,7 @@ async function resolveRepoPath(workspaceId: string): Promise<string | null> {
     select: { slug: true },
   })
   if (!workspace) return null
-  // Convention: repos are stored at /tmp/ghost-repos/<workspaceSlug>
-  return path.join('/tmp/ghost-repos', workspace.slug)
+  return path.join(getReposRoot(), workspace.slug)
 }
 
 export async function registerGitRoutes(app: FastifyInstance): Promise<void> {

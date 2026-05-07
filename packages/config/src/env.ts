@@ -26,6 +26,13 @@ const serverEnvSchema = z.object({
   // Docker
   DOCKER_HOST: z.string().default('unix:///var/run/docker.sock'),
   RUNTIME_NETWORK: z.string().default('ghost_runtime'),
+
+  // Git / repository management
+  /** Root directory where workspace repositories are cloned. */
+  GHOST_REPOS_PATH: z.string().default('/tmp/ghost-repos'),
+
+  // AI (optional — features degrade gracefully without API key)
+  OPENAI_API_KEY: z.string().optional(),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>
