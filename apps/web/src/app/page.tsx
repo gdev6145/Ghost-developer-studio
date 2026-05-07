@@ -144,10 +144,10 @@ function ChevronDownIcon({ className = 'w-4 h-4' }: { className?: string }) {
 
 function DashboardMock() {
   const recentProjects = [
-    { name: 'SaaS Landing Page', tech: 'Next.js · Tailwind CSS', time: '2h ago', initial: 'N', color: '#4F46E5' },
-    { name: 'AI Chat Dashboard', tech: 'Next.js · TypeScript', time: '5h ago', initial: 'A', color: '#7C3AED' },
-    { name: 'E-commerce Store', tech: 'Next.js · Stripe', time: '1d ago', initial: 'E', color: '#0F766E' },
-    { name: 'Task Management App', tech: 'React · Firebase', time: '2d ago', initial: 'T', color: '#B45309' },
+    { name: 'SaaS Landing Page', tech: 'Next.js · Tailwind CSS', time: '2h ago', projectInitial: 'N', color: '#4F46E5' },
+    { name: 'AI Chat Dashboard', tech: 'Next.js · TypeScript', time: '5h ago', projectInitial: 'A', color: '#7C3AED' },
+    { name: 'E-commerce Store', tech: 'Next.js · Stripe', time: '1d ago', projectInitial: 'E', color: '#0F766E' },
+    { name: 'Task Management App', tech: 'React · Firebase', time: '2d ago', projectInitial: 'T', color: '#B45309' },
   ]
 
   const recentActivity = [
@@ -262,7 +262,7 @@ function DashboardMock() {
                       className="w-4 h-4 rounded flex items-center justify-center text-white flex-shrink-0"
                       style={{ backgroundColor: p.color, fontSize: '7px', fontWeight: 700 }}
                     >
-                      {p.initial}
+                      {p.projectInitial}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[9px] text-white font-medium truncate">{p.name}</div>
@@ -383,7 +383,7 @@ function AIPoweredCard() {
             <div><span className="text-white">{'}'}</span></div>
           </div>
           {/* AI Chat overlay */}
-          <div className="absolute-ish m-2 w-40 bg-[#0E0E1A] border border-[#2D1B69] rounded-lg p-2 shadow-xl self-end" style={{ alignSelf: 'flex-end', margin: '8px' }}>
+          <div className="w-40 bg-[#0E0E1A] border border-[#2D1B69] rounded-lg p-2 shadow-xl" style={{ alignSelf: 'flex-end', margin: '8px' }}>
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1">
                 <GhostIcon className="w-3 h-3 text-purple-400" />
