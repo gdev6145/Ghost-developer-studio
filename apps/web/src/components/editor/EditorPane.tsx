@@ -7,6 +7,11 @@ import { applyGhostTheme } from '@ghost/editor'
 import { CollaborativeEditorBinding } from '@ghost/editor'
 import { getLanguageFromPath } from '@ghost/shared'
 import { PreviewPane } from '@/components/preview/PreviewPane'
+import { getCurrentUserId } from '@/lib/session'
+import type * as monaco from 'monaco-editor'
+
+type MonacoEditorInstance = monaco.editor.IStandaloneCodeEditor
+type MonacoInstance = typeof monaco
 
 // Dynamic import for Monaco (client-side only)
 const MonacoEditor = React.lazy(() =>
@@ -38,10 +43,7 @@ export function EditorPane({ workspaceId, collab }: EditorPaneProps) {
 
   const activeTab = tabs.find(t => t.fileId === activeTabId)
 
-  function handleEditorMount(
-    editor: Parameters<Parameters<typeof MonacoEditor>[0]['onMount'] & {}>[0],
-    monaco: Parameters<Parameters<typeof MonacoEditor>[0]['onMount'] & {}>[1]
-  ) {
+  function handleEditorMount(editor: MonacoEditorInstance, monaco: MonacoInstance) {
     // Apply Ghost dark theme
     applyGhostTheme(monaco)
 
@@ -59,12 +61,11 @@ export function EditorPane({ workspaceId, collab }: EditorPaneProps) {
     collab_.openFile(activeTab.fileId)
 
     bindingRef.current = new CollaborativeEditorBinding(
-      editor as Parameters<ConstructorParameters<typeof CollaborativeEditorBinding>[0] & {}>,
-      model as Parameters<ConstructorParameters<typeof CollaborativeEditorBinding>[1] & {}>,
+      editor,
+      model,
       activeTab.fileId,
       collab_,
-      // currentUserId is retrieved from the collab client in a real impl
-      'currentUser'
+      getCurrentUserId()
     )
   }
 

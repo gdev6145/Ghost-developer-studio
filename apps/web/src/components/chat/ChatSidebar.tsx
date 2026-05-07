@@ -7,6 +7,7 @@ import { usePresenceStore } from '@ghost/state'
 import { Avatar } from '@ghost/ui'
 import { getCollaboratorColor } from '@ghost/shared'
 import { generateId } from '@ghost/shared'
+import { getCurrentUserId, getCurrentDisplayName } from '@/lib/session'
 
 interface ChatSidebarProps {
   workspaceId: string
@@ -201,14 +202,4 @@ function TypingDots() {
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-function getCurrentUserId(): string {
-  if (typeof window === 'undefined') return 'anon'
-  return localStorage.getItem('ghost_userId') ?? 'anon'
-}
-
-function getCurrentDisplayName(): string {
-  if (typeof window === 'undefined') return 'Anonymous'
-  return localStorage.getItem('ghost_displayName') ?? 'Anonymous'
 }

@@ -1,5 +1,17 @@
 import React from 'react'
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Extract up to two initials from a display name.
+ * Handles empty strings, whitespace-only strings, and single-word names.
+ */
+export function getInitials(displayName: string): string {
+  const words = (displayName || '?').trim().split(/\s+/).filter(Boolean)
+  const letters = words.map(w => w[0] ?? '').join('').toUpperCase().slice(0, 2)
+  return letters || '?'
+}
+
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
 interface AvatarProps {
@@ -27,12 +39,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   badgeColor,
   className = '',
 }) => {
-  const initials = displayName
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const initials = getInitials(displayName)
 
   return (
     <div className={`relative inline-flex shrink-0 ${sizeClasses[size]} ${className}`}>

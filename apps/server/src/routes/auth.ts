@@ -1,12 +1,17 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { db } from '@ghost/database'
 import { signToken, verifyToken } from '@ghost/auth'
-import { generateId, now } from '@ghost/shared'
-import { createHash } from 'crypto'
+import bcrypt from 'bcrypt'
 
-// Simple password hashing using SHA-256 (use bcrypt in production)
-const hashPassword = (password: string): string =>
-  createHash('sha256').update(password).digest('hex')
+const BCRYPT_ROUNDS = 12
+
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_ROUNDS)
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash)
+}
 
 export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
   /**
@@ -35,7 +40,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
           email,
           username,
           displayName,
-          passwordHash: hashPassword(password),
+          passwordHash: await hashPassword(password),
         },
       })
 
@@ -62,7 +67,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       const { email, password } = req.body
 
       const user = await db.user.findUnique({ where: { email } })
-      if (!user || user.passwordHash !== hashPassword(password)) {
+      if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
         return reply.status(401).send({ error: 'Invalid credentials' })
       }
 

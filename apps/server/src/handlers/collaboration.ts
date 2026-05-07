@@ -85,19 +85,31 @@ async function handleMessage(
     // ─── Document Collaboration ──────────────────────────────────────────
 
     case 'document.open': {
-      const payload = msg.payload
+      const payload = msg.payload as WsDocumentOpen['payload']
       // Load Yjs state from database and send sync message back to client
-      const file = await db.file.findUnique({
-        where: { workspaceId_path: { workspaceId, path: payload.path } },
-      })
-      if (file?.content) {
+      // Use fileId if present, otherwise fall back to path lookup
+      const file = payload.fileId
+        ? await db.file.findUnique({ where: { id: payload.fileId } })
+        : await db.file.findUnique({
+            where: { workspaceId_path: { workspaceId, path: payload.path } },
+          })
+      if (!file) {
+        // Inform the client that the file was not found
+        socket.emit('message', {
+          type: 'error',
+          workspaceId,
+          actorId: 'server',
+          timestamp: now(),
+          payload: { code: 'FILE_NOT_FOUND', fileId: payload.fileId, path: payload.path },
+        })
+      } else if (file.content) {
         socket.emit('message', {
           type: 'document.sync',
           workspaceId,
           actorId: 'server',
           timestamp: now(),
           payload: {
-            fileId: payload.fileId,
+            fileId: file.id,
             stateVector: '',
             update: Buffer.from(file.content).toString('base64'),
           },

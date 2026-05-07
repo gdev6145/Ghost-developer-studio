@@ -14,6 +14,7 @@ import { EditorPane } from '@/components/editor/EditorPane'
 import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { PresenceSidebar } from '@/components/presence/PresenceSidebar'
 import { StatusBar } from '@/components/layout/StatusBar'
+import { getCurrentUserId, getCurrentDisplayName, getSessionToken } from '@/lib/session'
 
 interface WorkspacePageProps {
   workspaceId: string
@@ -54,7 +55,7 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
 
   useEffect(() => {
     const wsUrl = process.env['NEXT_PUBLIC_WS_URL'] ?? 'ws://localhost:4000'
-    const token = localStorage.getItem('ghost_token') ?? ''
+    const token = getSessionToken()
 
     const socket = io(wsUrl, {
       auth: { token },
@@ -66,8 +67,8 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
     socketRef.current = socket
 
     const collab = new CollaborationClient({
-      userId: getUserId(),
-      displayName: getDisplayName(),
+      userId: getCurrentUserId(),
+      displayName: getCurrentDisplayName(),
       workspaceId,
       socket,
     })
@@ -147,7 +148,7 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
 
     // Connect
     socket.on('connect', () => {
-      collab.joinWorkspace(getDisplayName())
+      collab.joinWorkspace(getCurrentDisplayName())
     })
 
     // Load workspace data
@@ -178,16 +179,6 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getUserId(): string {
-  if (typeof window === 'undefined') return 'anon'
-  return localStorage.getItem('ghost_userId') ?? 'anon'
-}
-
-function getDisplayName(): string {
-  if (typeof window === 'undefined') return 'Anonymous'
-  return localStorage.getItem('ghost_displayName') ?? 'Anonymous'
-}
-
 async function loadWorkspaceData(
   workspaceId: string,
   setWorkspace: (w: Parameters<typeof setWorkspace>[0]) => void,
@@ -195,18 +186,18 @@ async function loadWorkspaceData(
   setMessages: (m: Parameters<typeof setMessages>[0]) => void
 ): Promise<void> {
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ghost_token') ?? '' : ''
+  const token = getSessionToken()
   const headers = { Authorization: `Bearer ${token}` }
 
   try {
-    const [wsRes, filesRes, chatRes] = await Promise.all([
+    const [workspaceRes, filesRes, chatRes] = await Promise.all([
       fetch(`${apiUrl}/api/workspaces/${workspaceId}`, { headers }),
       fetch(`${apiUrl}/api/files/${workspaceId}`, { headers }),
       fetch(`${apiUrl}/api/chat/${workspaceId}/messages`, { headers }),
     ])
 
-    if (wsRes.ok) {
-      const ws = await wsRes.json() as Parameters<typeof setWorkspace>[0]
+    if (workspaceRes.ok) {
+      const ws = await workspaceRes.json() as Parameters<typeof setWorkspace>[0]
       setWorkspace(ws)
     }
     if (filesRes.ok) {
