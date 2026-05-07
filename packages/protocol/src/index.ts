@@ -10,3 +10,4 @@
 export * from './workspace'
 export * from './websocket'
 export * from './events'
+export * from './future'
