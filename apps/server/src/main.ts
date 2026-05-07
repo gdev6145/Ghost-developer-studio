@@ -2,7 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { Server as SocketIOServer } from 'socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
-import { createClient } from 'ioredis'
+import { Redis } from 'ioredis'
 import { validateServerEnv } from '@ghost/config'
 import { eventBus } from '@ghost/events'
 import { db } from '@ghost/database'
@@ -11,8 +11,13 @@ import { registerAuthRoutes } from './routes/auth'
 import { registerWorkspaceRoutes } from './routes/workspaces'
 import { registerChatRoutes } from './routes/chat'
 import { registerFileRoutes } from './routes/files'
+import { registerGitRoutes } from './routes/git'
+import { createEventsRoutes } from './routes/events'
 import { setupCollaborationHandlers } from './handlers/collaboration'
 import { setupRuntimeHandlers } from './handlers/runtime'
+import { setupTerminalHandlers } from './handlers/terminal'
+import { setupEventPersistence } from './handlers/event-persistence'
+import { setupAiAgent } from './handlers/ai-agent'
 import { authMiddleware } from './middleware/auth'
 
 /**
@@ -49,22 +54,21 @@ async function bootstrap(): Promise<void> {
   await app.register(registerWorkspaceRoutes, { prefix: '/api/workspaces' })
   await app.register(registerChatRoutes, { prefix: '/api/chat' })
   await app.register(registerFileRoutes, { prefix: '/api/files' })
+  await app.register(registerGitRoutes, { prefix: '/api/git' })
 
   // Health check
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
 
   // ─── Redis ───────────────────────────────────────────────────────────────
 
-  const pubClient = createClient(env.REDIS_URL)
+  const pubClient = new Redis(env.REDIS_URL)
   const subClient = pubClient.duplicate()
 
-  await Promise.all([pubClient.connect(), subClient.connect()])
   app.log.info('Redis connected')
 
   // ─── Socket.IO ───────────────────────────────────────────────────────────
 
   const io = new SocketIOServer(app.server, {
-    adapter: createAdapter(pubClient, subClient) as Parameters<typeof io.adapter>[0],
     cors: {
       origin: '*',
       methods: ['GET', 'POST'],
@@ -72,12 +76,26 @@ async function bootstrap(): Promise<void> {
     transports: ['websocket', 'polling'],
   })
 
+  io.adapter(createAdapter(pubClient, subClient))
+
   // Auth middleware for Socket.IO
   io.use(authMiddleware(env.JWT_SECRET))
 
   // Register collaboration and runtime event handlers
   setupCollaborationHandlers(io, pubClient, eventBus)
   setupRuntimeHandlers(io, eventBus)
+  setupTerminalHandlers(io)
+
+  // Persist all domain events for session replay
+  setupEventPersistence(eventBus)
+
+  // AI pair programming agent (scaffold mode without provider; plug in AiProvider to activate)
+  if (process.env['AI_ENABLED'] === 'true') {
+    setupAiAgent(io, eventBus)
+  }
+
+  // Register events routes (needs io for replay broadcast)
+  await app.register(createEventsRoutes(io), { prefix: '/api/events' })
 
   // ─── Start ───────────────────────────────────────────────────────────────
 
@@ -89,8 +107,8 @@ async function bootstrap(): Promise<void> {
     app.log.info('Shutting down...')
     await app.close()
     await db.$disconnect()
-    await pubClient.quit()
-    await subClient.quit()
+    pubClient.disconnect()
+    subClient.disconnect()
     process.exit(0)
   }
 

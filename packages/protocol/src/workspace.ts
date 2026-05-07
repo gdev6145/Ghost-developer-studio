@@ -117,6 +117,17 @@ export interface Branch {
   updatedAt: string
 }
 
+export interface GitCommit {
+  sha: string
+  shortSha: string
+  message: string
+  authorName: string
+  authorEmail: string
+  authorDate: string
+  parents: string[]
+  refs: string[]
+}
+
 // ─── Presence ────────────────────────────────────────────────────────────────
 
 export interface PresenceState {

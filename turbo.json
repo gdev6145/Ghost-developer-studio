@@ -7,9 +7,12 @@
     "JWT_SECRET",
     "GITHUB_CLIENT_ID",
     "GITHUB_CLIENT_SECRET",
-    "PORT"
+    "PORT",
+    "AI_ENABLED",
+    "OPENAI_API_KEY",
+    "WORKSPACE_ROOT"
   ],
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]

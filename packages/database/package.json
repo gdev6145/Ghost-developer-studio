@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "prisma generate && tsup src/index.ts --format cjs,esm --dts",
+    "build": "prisma generate && tsup src/index.ts --format cjs,esm --no-dts && tsc --emitDeclarationOnly --outDir dist --skipLibCheck",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
@@ -29,6 +29,7 @@
     "@prisma/client": "^5.12.0"
   },
   "devDependencies": {
+    "@types/node": "^20.12.7",
     "prisma": "^5.12.0",
     "tsup": "^8.0.0",
     "tsx": "^4.7.0",

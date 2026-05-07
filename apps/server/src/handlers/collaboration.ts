@@ -69,7 +69,7 @@ async function handleMessage(
       socket.to(`workspace:${workspaceId}`).emit('message', msg)
 
       // Send current workspace state to the joining client
-      await sendWorkspaceState(socket, workspaceId)
+      await sendWorkspaceState(socket, workspaceId, redis)
 
       await events.dispatch('user.joined', workspaceId, msg.payload, userId)
       break
@@ -198,6 +198,52 @@ async function handleMessage(
       break
     }
 
+    // ─── Collaborative Debugging ──────────────────────────────────────────
+
+    case 'debug.breakpoint.set': {
+      // Persist breakpoints in Redis for quick sync to late joiners
+      const bpKey = `debug:breakpoints:${workspaceId}`
+      const existingBps = await redis.get(bpKey)
+      const breakpoints: Array<{ id: string }> = existingBps
+        ? (JSON.parse(existingBps) as Array<{ id: string }>)
+        : []
+      const bp = (msg as import('@ghost/protocol').WsDebugBreakpointSet).payload.breakpoint
+      const bpIdx = breakpoints.findIndex(b => b.id === bp.id)
+      if (bpIdx >= 0) {
+        breakpoints[bpIdx] = bp
+      } else {
+        breakpoints.push(bp)
+      }
+      await redis.set(bpKey, JSON.stringify(breakpoints))
+      io.to(`workspace:${workspaceId}`).emit('message', msg)
+      break
+    }
+
+    case 'debug.breakpoint.remove': {
+      const rmKey = `debug:breakpoints:${workspaceId}`
+      const rmExisting = await redis.get(rmKey)
+      if (rmExisting) {
+        const filtered = (JSON.parse(rmExisting) as Array<{ id: string }>).filter(
+          b => b.id !== (msg as import('@ghost/protocol').WsDebugBreakpointRemove).payload.breakpointId
+        )
+        await redis.set(rmKey, JSON.stringify(filtered))
+      }
+      io.to(`workspace:${workspaceId}`).emit('message', msg)
+      break
+    }
+
+    case 'debug.session.start':
+    case 'debug.session.end': {
+      io.to(`workspace:${workspaceId}`).emit('message', msg)
+      await events.dispatch(
+        msg.type === 'debug.session.start' ? 'session.started' : 'session.ended',
+        workspaceId,
+        msg.payload as Record<string, unknown>,
+        userId
+      )
+      break
+    }
+
     default:
       break
   }
@@ -224,7 +270,7 @@ async function handleDisconnect(
   await events.dispatch('user.left', workspaceId, { userId }, userId)
 }
 
-async function sendWorkspaceState(socket: Socket, workspaceId: string): Promise<void> {
+async function sendWorkspaceState(socket: Socket, workspaceId: string, redis: Redis): Promise<void> {
   const [workspace, files] = await Promise.all([
     db.workspace.findUnique({
       where: { id: workspaceId },
@@ -250,6 +296,22 @@ async function sendWorkspaceState(socket: Socket, workspaceId: string): Promise<
       runtimeStatus: workspace.runtimeState?.status ?? 'idle',
     },
   })
+
+  // Sync debug breakpoints to the joining user
+  const bpKey = `debug:breakpoints:${workspaceId}`
+  const existingBps = await redis.get(bpKey)
+  if (existingBps) {
+    const breakpoints = JSON.parse(existingBps) as unknown[]
+    if (breakpoints.length > 0) {
+      socket.emit('message', {
+        type: 'debug.breakpoint.sync',
+        workspaceId,
+        actorId: 'server',
+        timestamp: now(),
+        payload: { breakpoints },
+      })
+    }
+  }
 }
 
 async function persistDocumentUpdate(

@@ -61,7 +61,8 @@ export const sleep = (ms: number): Promise<void> =>
  * Returns a function that delays invoking `fn` until after `wait` ms
  * have elapsed since the last time the debounced function was invoked.
  */
-export function debounce<T extends (...args: unknown[]) => unknown>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function debounce<T extends (...args: any[]) => unknown>(
   fn: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -78,7 +79,8 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  * Throttle a function call.
  * Returns a function that invokes `fn` at most once per `limit` ms.
  */
-export function throttle<T extends (...args: unknown[]) => unknown>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function throttle<T extends (...args: any[]) => unknown>(
   fn: T,
   limit: number
 ): (...args: Parameters<T>) => void {

@@ -1,5 +1,6 @@
 import simpleGit, { type SimpleGit } from 'simple-git'
 import type { EventDispatcher } from '@ghost/events'
+import type { GitCommit } from '@ghost/protocol'
 import { now } from '@ghost/shared'
 
 export interface CloneOptions {
@@ -167,4 +168,55 @@ export class GitService {
     const result = await this.git(repoPath).branchLocal()
     return result.all
   }
+
+  /**
+   * Get git commit log as a structured graph for branch visualization.
+   * Returns commits in reverse-chronological order with parent SHAs.
+   */
+  async log(repoPath: string, options: { maxCount?: number; branch?: string } = {}): Promise<GitCommit[]> {
+    const { maxCount = 50, branch } = options
+    const g = this.git(repoPath)
+
+    const args: string[] = [
+      `--max-count=${maxCount}`,
+      '--topo-order',
+      '--format=%H%n%h%n%s%n%an%n%ae%n%aI%n%P%n%D%n---COMMIT---',
+    ]
+    if (branch) args.push(branch)
+
+    const raw = await g.raw(['log', ...args])
+    return parseGitLog(raw)
+  }
+
+  /**
+   * Get the current HEAD commit SHA.
+   */
+  async headSha(repoPath: string): Promise<string> {
+    const result = await this.git(repoPath).revparse(['HEAD'])
+    return result.trim()
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function parseGitLog(raw: string): GitCommit[] {
+  const commits: GitCommit[] = []
+  const blocks = raw.split('---COMMIT---').map(b => b.trim()).filter(Boolean)
+
+  for (const block of blocks) {
+    const lines = block.split('\n')
+    const sha = lines[0]?.trim() ?? ''
+    const shortSha = lines[1]?.trim() ?? ''
+    const message = lines[2]?.trim() ?? ''
+    const authorName = lines[3]?.trim() ?? ''
+    const authorEmail = lines[4]?.trim() ?? ''
+    const authorDate = lines[5]?.trim() ?? ''
+    const parents = (lines[6]?.trim() ?? '').split(' ').filter(Boolean)
+    const refs = (lines[7]?.trim() ?? '').split(',').map(r => r.trim()).filter(Boolean)
+
+    if (!sha) continue
+    commits.push({ sha, shortSha, message, authorName, authorEmail, authorDate, parents, refs })
+  }
+
+  return commits
 }

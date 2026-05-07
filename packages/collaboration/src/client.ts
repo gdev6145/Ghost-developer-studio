@@ -15,6 +15,14 @@ import type {
   WsFileCreated,
   WsFileDeleted,
   WsFileRenamed,
+  WsDebugBreakpointSet,
+  WsDebugBreakpointRemove,
+  WsDebugBreakpointSync,
+  WsDebugSessionStart,
+  WsDebugSessionEnd,
+  WsReplayStart,
+  WsReplayTick,
+  WsReplayEnd,
 } from '@ghost/protocol'
 import { DocumentManager } from './document-manager'
 import { AwarenessManager } from './awareness'
@@ -40,6 +48,16 @@ export type CollabEventMap = {
   'branch:switched': (payload: WsBranchSwitch['payload']) => void
   'member:joined': (payload: WsWorkspaceJoin['payload']) => void
   'member:left': (payload: WsWorkspaceLeave['payload']) => void
+  // Collaborative debugging
+  'debug:breakpoint:set': (payload: WsDebugBreakpointSet['payload']) => void
+  'debug:breakpoint:remove': (payload: WsDebugBreakpointRemove['payload']) => void
+  'debug:breakpoint:sync': (payload: WsDebugBreakpointSync['payload']) => void
+  'debug:session:start': (payload: WsDebugSessionStart['payload']) => void
+  'debug:session:end': (payload: WsDebugSessionEnd['payload']) => void
+  // Session replay
+  'replay:start': (payload: WsReplayStart['payload']) => void
+  'replay:tick': (payload: WsReplayTick['payload']) => void
+  'replay:end': (payload: WsReplayEnd['payload']) => void
   reconnect: () => void
   disconnect: () => void
 }
@@ -105,7 +123,7 @@ export class CollaborationClient {
       workspaceId: this.workspaceId,
       actorId: this.actorId,
       timestamp: new Date().toISOString(),
-      payload: { userId: this.userId, displayName, avatarUrl },
+      payload: { userId: this.userId, displayName, ...(avatarUrl !== undefined ? { avatarUrl } : {}) },
     }
     this.socket.emit('message', msg)
   }
@@ -317,6 +335,48 @@ export class CollaborationClient {
       case 'workspace.leave': {
         const payload = msg['payload'] as WsWorkspaceLeave['payload']
         this.emit('member:left', payload)
+        break
+      }
+      // ─── Collaborative Debugging ────────────────────────────────────────
+      case 'debug.breakpoint.set': {
+        const payload = msg['payload'] as WsDebugBreakpointSet['payload']
+        this.emit('debug:breakpoint:set', payload)
+        break
+      }
+      case 'debug.breakpoint.remove': {
+        const payload = msg['payload'] as WsDebugBreakpointRemove['payload']
+        this.emit('debug:breakpoint:remove', payload)
+        break
+      }
+      case 'debug.breakpoint.sync': {
+        const payload = msg['payload'] as WsDebugBreakpointSync['payload']
+        this.emit('debug:breakpoint:sync', payload)
+        break
+      }
+      case 'debug.session.start': {
+        const payload = msg['payload'] as WsDebugSessionStart['payload']
+        this.emit('debug:session:start', payload)
+        break
+      }
+      case 'debug.session.end': {
+        const payload = msg['payload'] as WsDebugSessionEnd['payload']
+        this.emit('debug:session:end', payload)
+        break
+      }
+      // ─── Session Replay ─────────────────────────────────────────────────
+      case 'replay.start': {
+        const payload = msg['payload'] as WsReplayStart['payload']
+        this.emit('replay:start', payload)
+        break
+      }
+      case 'replay.tick': {
+        const payload = msg['payload'] as WsReplayTick['payload']
+        this.emit('replay:tick', payload)
+        break
+      }
+      case 'replay.end': {
+        const payload = msg['payload'] as WsReplayEnd['payload']
+        this.emit('replay:end', payload)
         break
       }
       default:

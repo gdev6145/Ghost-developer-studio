@@ -54,6 +54,22 @@ export type WsEventType =
   | 'file.created'
   | 'file.deleted'
   | 'file.renamed'
+  // Terminal (multiplayer PTY)
+  | 'terminal.create'
+  | 'terminal.input'
+  | 'terminal.output'
+  | 'terminal.resize'
+  | 'terminal.close'
+  // Collaborative debugging
+  | 'debug.breakpoint.set'
+  | 'debug.breakpoint.remove'
+  | 'debug.breakpoint.sync'
+  | 'debug.session.start'
+  | 'debug.session.end'
+  // Session replay
+  | 'replay.start'
+  | 'replay.tick'
+  | 'replay.end'
   // System
   | 'error'
   | 'ping'
@@ -285,6 +301,132 @@ export interface WsError extends WsEnvelope {
   }
 }
 
+// ─── Terminal Events (Multiplayer PTY) ───────────────────────────────────────
+
+export interface WsTerminalCreate extends WsEnvelope {
+  type: 'terminal.create'
+  payload: {
+    terminalId: string
+    cols: number
+    rows: number
+    shell?: string
+  }
+}
+
+export interface WsTerminalInput extends WsEnvelope {
+  type: 'terminal.input'
+  payload: {
+    terminalId: string
+    data: string
+  }
+}
+
+export interface WsTerminalOutput extends WsEnvelope {
+  type: 'terminal.output'
+  payload: {
+    terminalId: string
+    data: string
+  }
+}
+
+export interface WsTerminalResize extends WsEnvelope {
+  type: 'terminal.resize'
+  payload: {
+    terminalId: string
+    cols: number
+    rows: number
+  }
+}
+
+export interface WsTerminalClose extends WsEnvelope {
+  type: 'terminal.close'
+  payload: {
+    terminalId: string
+  }
+}
+
+// ─── Collaborative Debugging Events ──────────────────────────────────────────
+
+export interface DebugBreakpoint {
+  id: string
+  fileId: string
+  filePath: string
+  line: number
+  condition?: string
+  enabled: boolean
+  authorId: string
+}
+
+export interface WsDebugBreakpointSet extends WsEnvelope {
+  type: 'debug.breakpoint.set'
+  payload: {
+    breakpoint: DebugBreakpoint
+  }
+}
+
+export interface WsDebugBreakpointRemove extends WsEnvelope {
+  type: 'debug.breakpoint.remove'
+  payload: {
+    breakpointId: string
+    fileId: string
+  }
+}
+
+export interface WsDebugBreakpointSync extends WsEnvelope {
+  type: 'debug.breakpoint.sync'
+  payload: {
+    breakpoints: DebugBreakpoint[]
+  }
+}
+
+export interface WsDebugSessionStart extends WsEnvelope {
+  type: 'debug.session.start'
+  payload: {
+    sessionId: string
+    fileId?: string
+    configuration: Record<string, unknown>
+  }
+}
+
+export interface WsDebugSessionEnd extends WsEnvelope {
+  type: 'debug.session.end'
+  payload: {
+    sessionId: string
+  }
+}
+
+// ─── Session Replay Events ────────────────────────────────────────────────────
+
+export interface WsReplayStart extends WsEnvelope {
+  type: 'replay.start'
+  payload: {
+    replayId: string
+    fromTimestamp: string
+    toTimestamp: string
+    speed: number
+  }
+}
+
+export interface WsReplayTick extends WsEnvelope {
+  type: 'replay.tick'
+  payload: {
+    replayId: string
+    eventId: string
+    eventType: string
+    timestamp: string
+    actorId?: string
+    data: Record<string, unknown>
+  }
+}
+
+export interface WsReplayEnd extends WsEnvelope {
+  type: 'replay.end'
+  payload: {
+    replayId: string
+    totalEvents: number
+  }
+}
+
 // ─── Union Type ──────────────────────────────────────────────────────────────
 
 export type WsMessage =
@@ -311,4 +453,17 @@ export type WsMessage =
   | WsFileCreated
   | WsFileDeleted
   | WsFileRenamed
+  | WsTerminalCreate
+  | WsTerminalInput
+  | WsTerminalOutput
+  | WsTerminalResize
+  | WsTerminalClose
+  | WsDebugBreakpointSet
+  | WsDebugBreakpointRemove
+  | WsDebugBreakpointSync
+  | WsDebugSessionStart
+  | WsDebugSessionEnd
+  | WsReplayStart
+  | WsReplayTick
+  | WsReplayEnd
   | WsError
