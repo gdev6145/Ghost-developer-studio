@@ -113,12 +113,9 @@ export default function WorkspacePage() {
                 Start a new repository with live collaboration and deployment preview.
               </p>
             </div>
-            <button
-              type="button"
-              className="mt-auto text-xs font-medium rounded-lg border border-[#2a2a41] bg-[#141425] text-gray-300 px-3 py-2 hover:bg-[#1a1a31] hover:text-white transition-colors text-left"
-            >
+            <div className="mt-auto text-xs font-medium rounded-lg border border-[#2a2a41] bg-[#141425] text-gray-300 px-3 py-2 text-left">
               Create via API →
-            </button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 p-4 rounded-xl border border-[#232338] bg-[#0f0f1a]">
