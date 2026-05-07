@@ -9,7 +9,7 @@
     "GITHUB_CLIENT_SECRET",
     "PORT"
   ],
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
