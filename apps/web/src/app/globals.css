@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Ghost Design Tokens ─────────────────────────────────────────────────── */
+
+:root {
+  --ghost-bg: #1E1E2E;
+  --ghost-surface: #181825;
+  --ghost-overlay: #313244;
+  --ghost-border: #313244;
+  --ghost-muted: #6C7086;
+  --ghost-text: #CDD6F4;
+  --ghost-blue: #89B4FA;
+  --ghost-green: #A6E3A1;
+  --ghost-red: #F38BA8;
+  --ghost-yellow: #F9E2AF;
+  --ghost-purple: #CBA6F7;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ghost-overlay); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ghost-muted); }
+
+/* ─── Monaco Editor Overrides ─────────────────────────────────────────────── */
+
+.monaco-editor .margin { background-color: #1E1E2E !important; }
+.monaco-editor-background { background-color: #1E1E2E !important; }
+
+/* ─── Collaborator Cursor Styles ──────────────────────────────────────────── */
+
+[class^="ghost-cursor-"] {
+  position: relative;
+  border-left: 2px solid currentColor;
+  animation: cursorBlink 1s ease-in-out infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.5; }
+}
+
+/* ─── Live Presence Indicator ─────────────────────────────────────────────── */
+
+.presence-indicator {
+  animation: presencePulse 2s ease-in-out infinite;
+}
+
+@keyframes presencePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+/* ─── Panel Transitions ───────────────────────────────────────────────────── */
+
+.panel-enter { animation: slideIn 0.2s ease-out; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}

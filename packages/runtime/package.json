@@ -1,0 +1,34 @@
+{
+  "name": "@ghost/runtime",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Docker runtime orchestration for Ghost workspace containers",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@ghost/events": "workspace:*",
+    "@ghost/protocol": "workspace:*",
+    "@ghost/shared": "workspace:*",
+    "dockerode": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.28",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.5"
+  }
+}

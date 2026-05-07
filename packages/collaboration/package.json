@@ -1,0 +1,41 @@
+{
+  "name": "@ghost/collaboration",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Yjs collaboration engine, presence awareness, and websocket sync",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@ghost/protocol": "workspace:*",
+    "@ghost/shared": "workspace:*",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.14"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.5"
+  },
+  "peerDependencies": {
+    "socket.io-client": "^4.7.0"
+  },
+  "peerDependenciesMeta": {
+    "socket.io-client": {
+      "optional": true
+    }
+  }
+}
