@@ -58,6 +58,74 @@ The platform is designed around shared ownership of the development lifecycle:
 - Expanded integrations with CI/CD and external developer tools
 - Collaboration analytics to improve team productivity
 
+## Current Status
+
+Ghost Developer Studio is currently in the foundation and planning phase.  
+This repository is used to define product direction, document goals, and prepare implementation structure for upcoming development milestones.
+
+## Getting Started
+
+At this stage, there is no runnable application module in this repository yet.  
+You can still get started by:
+
+1. Reading the project vision and roadmap sections
+2. Reviewing repository updates as new documentation is added
+3. Opening issues with suggestions for architecture, workflows, or collaboration features
+
+## Planned Platform Areas
+
+As development expands, core project areas are expected to include:
+
+- **Workspace service** for session lifecycle and collaboration state
+- **Collaboration engine** for real-time editing synchronization
+- **Execution layer** for terminal access and containerized previews
+- **Repository integration layer** for source control and pull request workflows
+- **Observability and audit layer** for monitoring and team activity history
+
+## Contributing
+
+Contributions are welcome as the project evolves. You can contribute by:
+
+- Proposing features and use cases through issues
+- Suggesting improvements to architecture and product documentation
+- Submitting pull requests for docs, templates, and future implementation modules
+
+## Repository Road Ahead
+
+This repository will gradually expand to include:
+
+- Architecture decision records and system design documents
+- Setup and development environment guides
+- Contribution standards and workflow conventions
+- Implementation modules for core platform capabilities
+
+## Design Principles
+
+The project direction is guided by a set of practical principles:
+
+- **Collaborative by default:** core workflows should support pair and team development out of the box
+- **Context in one place:** code, runtime, review, and communication should stay connected
+- **Secure shared access:** collaboration must preserve repository and environment safety boundaries
+- **Incremental delivery:** capabilities should be introduced in stages with clear value at each step
+
+## Success Signals
+
+As the platform matures, progress can be measured through:
+
+- Faster cycle time from issue to merged change
+- Reduced setup time for new collaborators joining active workspaces
+- Higher quality review loops through contextual, in-workflow feedback
+- Improved team visibility through activity and collaboration analytics
+
+## Community and Feedback
+
+Early input is valuable while architecture and workflows are still forming.  
+If you want to influence project direction, open issues for:
+
+- Feature proposals and collaboration pain points
+- Developer workflow expectations for teams of different sizes
+- Integration priorities across source control, CI/CD, and runtime tooling
+
 ## Repository Purpose
 
 This repository represents the project foundation and public-facing information for Ghost Developer Studio.  
