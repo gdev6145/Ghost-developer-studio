@@ -4,18 +4,31 @@
 
 > Multiple users. Same workspace. Same files. Live cursors. Live edits. Live presence.
 
+Ghost Developer Studio is a real-time collaborative coding platform built for teams that want to design, code, review, and ship software together in a shared multiplayer environment. It is built as a multiplayer-first, event-driven developer platform monorepo.
+
 ---
 
-## Overview
+## Vision
 
-Ghost Developer Studio is a multiplayer-first, event-driven developer platform built as a monorepo. It provides:
+Build a developer-first studio where distributed teams can:
 
-- **Collaborative editing** — multiple users edit the same file simultaneously with live cursors (Yjs + Monaco)
+- Write and review code together in real time
+- Share infrastructure and environments safely
+- Move from idea to deployment without leaving the platform
+- Keep collaboration fast, transparent, and traceable
+
+---
+
+## Core Capabilities
+
+- **Live collaborative editing** — multiple users edit the same file simultaneously with live cursors (Yjs + Monaco)
 - **Workspace presence** — see who's online, what they're editing, and their cursor position
 - **Workspace chat** — realtime messaging built into the dev environment
 - **Live preview** — Docker-powered container builds with streaming logs and instant preview
 - **Git integration** — clone, branch, commit, push via GitHub
 - **Desktop app** — Electron wrapper with local filesystem and Docker access
+- **Shared terminal access** for pair debugging, setup, and operational workflows
+- **Notifications and activity tracking** for project awareness
 
 ---
 
@@ -81,14 +94,14 @@ interface WsEnvelope {
 
 | Layer         | Technology                              |
 |---------------|-----------------------------------------|
-| Frontend      | React, Next.js 14, TypeScript           |
+| Frontend      | React, Next.js 15, TypeScript           |
 | Styling       | TailwindCSS (Ghost dark theme)          |
 | State         | Zustand                                 |
 | Collaboration | Yjs, y-monaco, Socket.IO client         |
-| Backend       | Fastify 4, Node.js 20, TypeScript       |
+| Backend       | Fastify 5, Node.js 20, TypeScript       |
 | Realtime      | Socket.IO 4, Redis pub/sub adapter      |
 | Database      | PostgreSQL 16, Prisma ORM               |
-| Desktop       | Electron 30                             |
+| Desktop       | Electron 39                             |
 | Runtime       | Docker (workspace preview containers)   |
 | Monorepo      | TurboRepo, pnpm workspaces              |
 
@@ -201,6 +214,34 @@ docker compose -f docker/docker-compose.yml up -d postgres redis
 
 ---
 
+## Design Principles
+
+- **Collaborative by default:** core workflows support pair and team development out of the box
+- **Context in one place:** code, runtime, review, and communication stay connected
+- **Secure shared access:** collaboration preserves repository and environment safety boundaries
+- **Incremental delivery:** capabilities introduced in stages with clear value at each step
+
+---
+
+## Product Goals
+
+- **Speed:** reduce friction between coding, testing, and reviewing
+- **Reliability:** maintain stable synchronized sessions for collaborators
+- **Security:** support safe access to repositories and runtime environments
+- **Scalability:** enable collaboration from small teams to larger organizations
+
+---
+
+## Contributing
+
+Contributions are welcome as the project evolves. You can contribute by:
+
+- Proposing features and use cases through issues
+- Suggesting improvements to architecture and product documentation
+- Submitting pull requests for implementation modules
+
+---
+
 ## Future Roadmap
 
 The architecture is designed to support (not yet implemented):
@@ -216,4 +257,4 @@ The architecture is designed to support (not yet implemented):
 
 ## License
 
-MIT
+This project is released under the [MIT License](LICENSE).
