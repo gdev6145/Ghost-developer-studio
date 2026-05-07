@@ -4,7 +4,34 @@
 
 > Multiple users. Same workspace. Same files. Live cursors. Live edits. Live presence.
 
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![Fastify](https://img.shields.io/badge/Fastify-5-000000?logo=fastify)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+
 Ghost Developer Studio is a real-time collaborative coding platform built for teams that want to design, code, review, and ship software together in a shared multiplayer environment. It is built as a multiplayer-first, event-driven developer platform monorepo.
+
+---
+
+## At a Glance
+
+| 🧩 Component | ✨ What you get |
+|---|---|
+| Web Studio | Shared workspace UI with editor, chat, presence, and preview |
+| Realtime Engine | Multi-user sync with Yjs + Socket.IO |
+| Backend Services | Fastify APIs, auth, and collaboration handlers |
+| Desktop App | Electron wrapper for local integrations |
+| Shared Packages | Typed protocol, state stores, UI components, runtime + git modules |
+
+```mermaid
+flowchart LR
+  U[Developers] --> W[Web/Desktop Clients]
+  W --> C[Collaboration Layer<br/>Yjs + Socket.IO]
+  C --> S[Fastify Server]
+  S --> D[(PostgreSQL)]
+  S --> R[(Redis Pub/Sub)]
+  S --> RT[Runtime Manager<br/>Docker]
+```
 
 ---
 
