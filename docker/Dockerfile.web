@@ -1,0 +1,53 @@
+# ─── Ghost Web App — Dockerfile ──────────────────────────────────────────────
+FROM node:20-alpine AS base
+RUN npm install -g pnpm@9.1.0
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml ./
+COPY packages/protocol/package.json packages/protocol/
+COPY packages/shared/package.json packages/shared/
+COPY packages/state/package.json packages/state/
+COPY packages/collaboration/package.json packages/collaboration/
+COPY packages/editor/package.json packages/editor/
+COPY packages/ui/package.json packages/ui/
+COPY apps/web/package.json apps/web/
+RUN pnpm install --frozen-lockfile --filter "@ghost/web..."
+
+# ── Builder ───────────────────────────────────────────────────────────────────
+FROM deps AS builder
+WORKDIR /app
+COPY packages/ packages/
+COPY apps/web/ apps/web/
+
+# Build shared packages first
+RUN pnpm --filter "@ghost/protocol" run build
+RUN pnpm --filter "@ghost/shared" run build
+RUN pnpm --filter "@ghost/state" run build
+RUN pnpm --filter "@ghost/collaboration" run build
+RUN pnpm --filter "@ghost/editor" run build
+RUN pnpm --filter "@ghost/ui" run build
+
+# Build web app
+RUN pnpm --filter "@ghost/web" run build
+
+# ── Runner ────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 ghost && \
+    adduser --system --uid 1001 ghost
+
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+USER ghost
+
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "apps/web/server.js"]

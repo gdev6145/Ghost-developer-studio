@@ -1,0 +1,241 @@
+// ─── Ghost Developer Studio — Prisma Schema ──────────────────────────────────
+// Database: PostgreSQL
+// ORM: Prisma
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  username     String  @unique
+  displayName  String
+  avatarUrl    String?
+  passwordHash String?
+
+  // OAuth
+  githubId    String? @unique
+  githubToken String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[]
+  chatMessages    ChatMessage[]
+  notifications   Notification[]
+  sessions        Session[]
+  events          Event[]
+
+  @@map("users")
+}
+
+// ─── Workspaces ──────────────────────────────────────────────────────────────
+
+model Workspace {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  ownerId     String
+  owner       User    @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members       WorkspaceMember[]
+  files         File[]
+  branches      Branch[]
+  chatMessages  ChatMessage[]
+  notifications Notification[]
+  sessions      Session[]
+  events        Event[]
+  runtimeState  RuntimeState?
+
+  @@map("workspaces")
+}
+
+// ─── Workspace Members ───────────────────────────────────────────────────────
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(editor)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  owner
+  admin
+  editor
+  viewer
+}
+
+// ─── Sessions ────────────────────────────────────────────────────────────────
+
+model Session {
+  id          String  @id @default(cuid())
+  userId      String
+  workspaceId String
+  socketId    String?
+  token       String  @unique
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  connectedAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  expiresAt   DateTime
+
+  @@map("sessions")
+}
+
+// ─── Files ───────────────────────────────────────────────────────────────────
+
+model File {
+  id          String   @id @default(cuid())
+  workspaceId String
+  path        String
+  name        String
+  type        FileType @default(file)
+  content     Bytes? // Stored as binary (Yjs encoded state)
+  language    String?
+  parentId    String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent    File?     @relation("FileTree", fields: [parentId], references: [id])
+  children  File[]    @relation("FileTree")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, path])
+  @@map("files")
+}
+
+enum FileType {
+  file
+  directory
+}
+
+// ─── Branches ────────────────────────────────────────────────────────────────
+
+model Branch {
+  id                String  @id @default(cuid())
+  workspaceId       String
+  name              String
+  isDefault         Boolean @default(false)
+  createdFromBranch String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@map("branches")
+}
+
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+model ChatMessage {
+  id          String @id @default(cuid())
+  workspaceId String
+  authorId    String
+  content     String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+
+  @@map("chat_messages")
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+model Notification {
+  id          String  @id @default(cuid())
+  workspaceId String
+  userId      String
+  type        String
+  title       String
+  message     String?
+  read        Boolean @default(false)
+  metadata    Json?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// ─── Events (Audit Log) ──────────────────────────────────────────────────────
+
+model Event {
+  id          String @id @default(cuid())
+  workspaceId String
+  actorId     String?
+  type        String
+  payload     Json
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor     User?     @relation(fields: [actorId], references: [id])
+
+  timestamp DateTime @default(now())
+
+  @@index([workspaceId, timestamp])
+  @@index([type])
+  @@map("events")
+}
+
+// ─── Runtime State ───────────────────────────────────────────────────────────
+
+model RuntimeState {
+  id          String        @id @default(cuid())
+  workspaceId String        @unique
+  status      RuntimeStatus @default(idle)
+  containerId String?
+  previewUrl  String?
+  buildLogs   String[]
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  startedAt DateTime?
+  stoppedAt DateTime?
+  updatedAt DateTime  @updatedAt
+
+  @@map("runtime_states")
+}
+
+enum RuntimeStatus {
+  idle
+  starting
+  running
+  building
+  error
+  stopped
+}

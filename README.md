@@ -1,11 +1,12 @@
 # Ghost Developer Studio
 
-Ghost Developer Studio is a real-time collaborative coding platform built for teams that want to design, code, review, and ship software together in a shared multiplayer environment.
+**Realtime collaborative developer operating system.**
 
-## Project Overview
+> Multiple users. Same workspace. Same files. Live cursors. Live edits. Live presence.
 
-Ghost Developer Studio combines collaborative editing, integrated development tooling, and team communication features into a single workspace experience.  
-The project focuses on reducing context switching by bringing code, terminal access, source control, live preview, and discussions into one synchronized environment.
+Ghost Developer Studio is a real-time collaborative coding platform built for teams that want to design, code, review, and ship software together in a shared multiplayer environment. It is built as a multiplayer-first, event-driven developer platform monorepo.
+
+---
 
 ## Vision
 
@@ -16,33 +17,211 @@ Build a developer-first studio where distributed teams can:
 - Move from idea to deployment without leaving the platform
 - Keep collaboration fast, transparent, and traceable
 
+---
+
 ## Core Capabilities
 
-- **Live collaborative editing** with synchronized cursors and shared sessions
+- **Live collaborative editing** — multiple users edit the same file simultaneously with live cursors (Yjs + Monaco)
+- **Workspace presence** — see who's online, what they're editing, and their cursor position
+- **Workspace chat** — realtime messaging built into the dev environment
+- **Live preview** — Docker-powered container builds with streaming logs and instant preview
+- **Git integration** — clone, branch, commit, push via GitHub
+- **Desktop app** — Electron wrapper with local filesystem and Docker access
 - **Shared terminal access** for pair debugging, setup, and operational workflows
-- **GitHub integration** for repository sync, pull requests, and branch-based development
-- **Containerized previews** through Docker-based runtime environments
-- **Integrated team chat** linked to development context
 - **Notifications and activity tracking** for project awareness
-- **Branching and workspace isolation** for parallel feature work
-- **Multiplayer development flows** for pair and mob programming
 
-## Target Use Cases
+---
 
-- Remote engineering teams working across time zones
-- Startup teams needing fast feature iteration with low setup overhead
-- Educational groups practicing collaborative software development
-- Product teams running live coding, review, and debugging sessions
+## Architecture
 
-## Collaboration Model
+```
+ghost/
+├── apps/
+│   ├── web/          # Next.js React web app
+│   ├── desktop/      # Electron desktop app
+│   └── server/       # Fastify backend + Socket.IO
+│
+├── packages/
+│   ├── protocol/     # Shared typed contracts (WS messages, interfaces)
+│   ├── shared/       # Common utilities (generateId, colors, debounce)
+│   ├── config/       # Environment validation (Zod schemas)
+│   ├── events/       # Internal event bus (EventDispatcher)
+│   ├── collaboration/# Yjs engine + CollaborationClient
+│   ├── editor/       # Monaco bindings + Ghost theme
+│   ├── state/        # Zustand stores (workspace, editor, presence, chat, runtime)
+│   ├── ui/           # Shared React components (Avatar, StatusBadge, Layout)
+│   ├── database/     # Prisma schema + PostgreSQL client
+│   ├── auth/         # JWT sign/verify utilities
+│   ├── runtime/      # Docker orchestration (RuntimeManager)
+│   └── git/          # Git integration (simple-git wrapper)
+│
+├── docker/           # Docker Compose + Dockerfiles
+├── scripts/          # Dev setup scripts
+└── .github/          # CI/CD workflows
+```
 
-The platform is designed around shared ownership of the development lifecycle:
+### Realtime Collaboration Stack
 
-1. Create or join a collaborative workspace
-2. Work on branches with real-time visibility of changes
-3. Discuss implementation directly alongside code context
-4. Run and preview applications in containerized environments
-5. Open pull requests and iterate with integrated feedback loops
+```
+Monaco Editor
+  ↓ y-monaco binding
+Yjs Document (Y.Text per file)
+  ↓ CollaborationClient
+Socket.IO (ws transport)
+  ↓ Redis Adapter (pub/sub for horizontal scaling)
+Server collaboration handler
+  ↓ Prisma
+PostgreSQL (binary Yjs state persisted per file)
+```
+
+### WebSocket Protocol
+
+All messages use typed envelopes from `@ghost/protocol`:
+
+```typescript
+interface WsEnvelope {
+  type: WsEventType    // e.g., 'document.update', 'presence.cursor'
+  workspaceId: string
+  actorId: string
+  timestamp: string
+  payload: object
+}
+```
+
+---
+
+## Tech Stack
+
+| Layer         | Technology                              |
+|---------------|-----------------------------------------|
+| Frontend      | React, Next.js 15, TypeScript           |
+| Styling       | TailwindCSS (Ghost dark theme)          |
+| State         | Zustand                                 |
+| Collaboration | Yjs, y-monaco, Socket.IO client         |
+| Backend       | Fastify 5, Node.js 20, TypeScript       |
+| Realtime      | Socket.IO 4, Redis pub/sub adapter      |
+| Database      | PostgreSQL 16, Prisma ORM               |
+| Desktop       | Electron 39                             |
+| Runtime       | Docker (workspace preview containers)   |
+| Monorepo      | TurboRepo, pnpm workspaces              |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+- Docker (for PostgreSQL, Redis, and workspace containers)
+
+### Automated Setup
+
+```bash
+./scripts/dev-setup.sh
+```
+
+### Manual Setup
+
+```bash
+# Install dependencies
+pnpm install
+
+# Copy environment variables and edit them
+cp .env.example .env
+
+# Start infrastructure
+docker compose -f docker/docker-compose.yml up -d postgres redis
+
+# Run database migrations
+pnpm --filter "@ghost/database" run db:migrate
+
+# Build shared packages
+pnpm run build --filter="./packages/*"
+
+# Start all dev servers
+pnpm run dev
+```
+
+### Access
+
+| Service | URL                       |
+|---------|---------------------------|
+| Web App | http://localhost:3000      |
+| Server  | http://localhost:4000      |
+| Health  | http://localhost:4000/health |
+
+---
+
+## Core Packages
+
+### `@ghost/protocol`
+Shared TypeScript interfaces and typed WebSocket contracts. Import here to get all shared types:
+```typescript
+import type { Workspace, WsMessage, PresenceState } from '@ghost/protocol'
+```
+
+### `@ghost/collaboration`
+The realtime collaboration engine:
+```typescript
+const collab = new CollaborationClient({ userId, workspaceId, socket })
+collab.joinWorkspace(displayName)
+collab.openFile(fileId)
+collab.on('document:updated', fileId => { /* re-render */ })
+```
+
+### `@ghost/state`
+Zustand stores for all UI state:
+```typescript
+const workspace = useWorkspaceStore(s => s.workspace)
+const onlineUsers = usePresenceStore(s => s.onlineUsers)
+const messages = useChatStore(s => s.messages)
+const { status, previewUrl } = useRuntimeStore()
+```
+
+### `@ghost/events`
+Internal event bus for server-side domain events:
+```typescript
+eventBus.on('file.updated', async event => {
+  // trigger rebuild, broadcast, persist
+})
+await eventBus.dispatch('user.joined', workspaceId, { userId })
+```
+
+---
+
+## Development
+
+```bash
+pnpm run dev        # All apps in parallel
+pnpm run build      # Production build
+pnpm run typecheck  # TypeScript check
+pnpm run lint       # ESLint
+pnpm run test       # Tests
+```
+
+---
+
+## Docker Deployment
+
+```bash
+# Full stack
+docker compose -f docker/docker-compose.yml up -d
+
+# Infrastructure only (for local dev)
+docker compose -f docker/docker-compose.yml up -d postgres redis
+```
+
+---
+
+## Design Principles
+
+- **Collaborative by default:** core workflows support pair and team development out of the box
+- **Context in one place:** code, runtime, review, and communication stay connected
+- **Secure shared access:** collaboration preserves repository and environment safety boundaries
+- **Incremental delivery:** capabilities introduced in stages with clear value at each step
+
+---
 
 ## Product Goals
 
@@ -51,36 +230,7 @@ The platform is designed around shared ownership of the development lifecycle:
 - **Security:** support safe access to repositories and runtime environments
 - **Scalability:** enable collaboration from small teams to larger organizations
 
-## Roadmap Themes
-
-- Enhanced workspace orchestration and environment templates
-- Richer code review workflows and contextual annotations
-- Expanded integrations with CI/CD and external developer tools
-- Collaboration analytics to improve team productivity
-
-## Current Status
-
-Ghost Developer Studio is currently in the foundation and planning phase.  
-This repository is used to define product direction, document goals, and prepare implementation structure for upcoming development milestones.
-
-## Getting Started
-
-At this stage, there is no runnable application module in this repository yet.  
-You can still get started by:
-
-1. Reading the project vision and roadmap sections
-2. Reviewing repository updates as new documentation is added
-3. Opening issues with suggestions for architecture, workflows, or collaboration features
-
-## Planned Platform Areas
-
-As development expands, core project areas are expected to include:
-
-- **Workspace service** for session lifecycle and collaboration state
-- **Collaboration engine** for real-time editing synchronization
-- **Execution layer** for terminal access and containerized previews
-- **Repository integration layer** for source control and pull request workflows
-- **Observability and audit layer** for monitoring and team activity history
+---
 
 ## Contributing
 
@@ -88,48 +238,22 @@ Contributions are welcome as the project evolves. You can contribute by:
 
 - Proposing features and use cases through issues
 - Suggesting improvements to architecture and product documentation
-- Submitting pull requests for docs, templates, and future implementation modules
+- Submitting pull requests for implementation modules
 
-## Repository Road Ahead
+---
 
-This repository will gradually expand to include:
+## Future Roadmap
 
-- Architecture decision records and system design documents
-- Setup and development environment guides
-- Contribution standards and workflow conventions
-- Implementation modules for core platform capabilities
+The architecture is designed to support (not yet implemented):
 
-## Design Principles
+- **AI pair programming** — LLM agents subscribe to the event bus
+- **Session replay** — events are persisted; replay is an event consumer
+- **Collaborative debugging** — shared breakpoints via workspace events
+- **Branch visualization** — real-time git graph
+- **Multiplayer terminals** — PTY over Socket.IO
+- **Workspace memory** — vectorized event history for AI context
 
-The project direction is guided by a set of practical principles:
-
-- **Collaborative by default:** core workflows should support pair and team development out of the box
-- **Context in one place:** code, runtime, review, and communication should stay connected
-- **Secure shared access:** collaboration must preserve repository and environment safety boundaries
-- **Incremental delivery:** capabilities should be introduced in stages with clear value at each step
-
-## Success Signals
-
-As the platform matures, progress can be measured through:
-
-- Faster cycle time from issue to merged change
-- Reduced setup time for new collaborators joining active workspaces
-- Higher quality review loops through contextual, in-workflow feedback
-- Improved team visibility through activity and collaboration analytics
-
-## Community and Feedback
-
-Early input is valuable while architecture and workflows are still forming.  
-If you want to influence project direction, open issues for:
-
-- Feature proposals and collaboration pain points
-- Developer workflow expectations for teams of different sizes
-- Integration priorities across source control, CI/CD, and runtime tooling
-
-## Repository Purpose
-
-This repository represents the project foundation and public-facing information for Ghost Developer Studio.  
-As implementation modules grow, this repository can also host architecture docs, contribution guides, and platform-specific setup details.
+---
 
 ## License
 

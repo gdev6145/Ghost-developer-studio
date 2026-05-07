@@ -1,0 +1,39 @@
+{
+  "name": "@ghost/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ghost Developer Studio — Fastify backend with Socket.IO collaboration",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsup src/main.ts --format cjs --dts-resolve",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "db:migrate": "prisma migrate dev --schema ../packages/database/prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema ../packages/database/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@ghost/auth": "workspace:*",
+    "@ghost/config": "workspace:*",
+    "@ghost/database": "workspace:*",
+    "@ghost/events": "workspace:*",
+    "@ghost/git": "workspace:*",
+    "@ghost/protocol": "workspace:*",
+    "@ghost/runtime": "workspace:*",
+    "@ghost/shared": "workspace:*",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bcrypt": "^5.1.1",
+    "fastify": "^5.8.5",
+    "ioredis": "^5.3.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/bcrypt": "^5.0.2",
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "@ghost/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ghost Developer Studio — Electron desktop application",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:electron\" \"npm run dev:renderer\"",
+    "dev:electron": "tsx watch src/main.ts",
+    "dev:renderer": "next dev -p 3001",
+    "build": "npm run build:renderer && npm run build:electron",
+    "build:renderer": "next build",
+    "build:electron": "tsup src/main.ts src/preload.ts --format cjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf dist .next out *.tsbuildinfo",
+    "package": "electron-builder"
+  },
+  "dependencies": {
+    "@ghost/shared": "workspace:*",
+    "@ghost/protocol": "workspace:*",
+    "electron-is-dev": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "concurrently": "^8.2.2",
+    "electron": "^39.8.1",
+    "electron-builder": "^24.13.3",
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.5"
+  },
+  "build": {
+    "appId": "studio.ghost.developer",
+    "productName": "Ghost Developer Studio",
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "dist/**",
+      "!node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"]
+    },
+    "win": {
+      "target": ["nsis"]
+    }
+  }
+}
