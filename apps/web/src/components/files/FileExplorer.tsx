@@ -6,19 +6,23 @@ import { useWorkspaceStore } from '@ghost/state'
 import { useEditorStore } from '@ghost/state'
 import { getLanguageFromPath } from '@ghost/shared'
 import type { FileNode } from '@ghost/protocol'
+import { BranchGraph } from '@/components/git/BranchGraph'
 
 interface FileExplorerProps {
   workspaceId: string
   collab: React.MutableRefObject<CollaborationClient | null>
 }
 
+type ExplorerTab = 'files' | 'git'
+
 /**
- * FileExplorer — left sidebar file tree.
+ * FileExplorer — left sidebar with Files and Git views.
  *
- * Displays the workspace file tree, handles file selection (opens in editor),
- * and shows live presence indicators for files other users have open.
+ * Files tab: workspace file tree with presence indicators
+ * Git tab: branch visualization + commit history
  */
 export function FileExplorer({ workspaceId, collab }: FileExplorerProps) {
+  const [activeTab, setActiveTab] = useState<ExplorerTab>('files')
   const files = useWorkspaceStore(s => s.files)
   const openTab = useEditorStore(s => s.openTab)
 
@@ -39,23 +43,43 @@ export function FileExplorer({ workspaceId, collab }: FileExplorerProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 h-9 border-b border-ghost-overlay shrink-0">
-        <span className="text-[10px] uppercase tracking-widest font-semibold text-ghost-muted">
-          Explorer
-        </span>
+      {/* Tab strip */}
+      <div className="flex border-b border-ghost-overlay shrink-0">
+        {(['files', 'git'] as ExplorerTab[]).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={[
+              'flex-1 py-1.5 text-[10px] uppercase tracking-widest font-semibold transition-colors',
+              activeTab === tab
+                ? 'text-ghost-text border-b-2 border-ghost-blue'
+                : 'text-ghost-muted hover:text-ghost-text',
+            ].join(' ')}
+          >
+            {tab === 'files' ? 'Files' : '⎇ Git'}
+          </button>
+        ))}
       </div>
 
-      {/* File tree */}
-      <div className="flex-1 overflow-y-auto py-1">
-        {tree.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-ghost-muted">No files yet</div>
-        ) : (
-          tree.map(node => (
-            <FileTreeNode key={node.id} node={node} depth={0} onClick={handleFileClick} />
-          ))
-        )}
-      </div>
+      {/* Files tab */}
+      {activeTab === 'files' && (
+        <div className="flex-1 overflow-y-auto py-1">
+          {tree.length === 0 ? (
+            <div className="px-3 py-4 text-xs text-ghost-muted">No files yet</div>
+          ) : (
+            tree.map(node => (
+              <FileTreeNode key={node.id} node={node} depth={0} onClick={handleFileClick} />
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Git tab */}
+      {activeTab === 'git' && (
+        <div className="flex-1 overflow-hidden">
+          <BranchGraph workspaceId={workspaceId} />
+        </div>
+      )}
     </div>
   )
 }

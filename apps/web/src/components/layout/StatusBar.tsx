@@ -10,6 +10,7 @@ import { AvatarGroup } from '@ghost/ui'
 interface StatusBarProps {
   workspaceId: string
   collab: React.MutableRefObject<unknown>
+  terminalToggle?: React.ReactNode
 }
 
 /**
@@ -20,7 +21,7 @@ interface StatusBarProps {
  * - Online collaborators
  * - Connection status
  */
-export function StatusBar({ workspaceId }: StatusBarProps) {
+export function StatusBar({ workspaceId, terminalToggle }: StatusBarProps) {
   const workspace = useWorkspaceStore(s => s.workspace)
   const activeBranch = useWorkspaceStore(s => s.activeBranch)
   const status = useRuntimeStore(s => s.status)
@@ -67,6 +68,11 @@ export function StatusBar({ workspaceId }: StatusBarProps) {
           <span className="text-ghost-muted">{onlineAvatars.length} online</span>
         </div>
       )}
+
+      <span className="text-ghost-overlay">|</span>
+
+      {/* Terminal toggle */}
+      {terminalToggle}
 
       <span className="text-ghost-overlay">|</span>
 

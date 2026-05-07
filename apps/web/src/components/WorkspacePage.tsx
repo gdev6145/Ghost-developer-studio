@@ -1,19 +1,23 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { io, type Socket } from 'socket.io-client'
+import { io } from 'socket.io-client'
 import { CollaborationClient } from '@ghost/collaboration'
 import { useWorkspaceStore } from '@ghost/state'
-import { useEditorStore } from '@ghost/state'
 import { usePresenceStore } from '@ghost/state'
 import { useChatStore } from '@ghost/state'
 import { useRuntimeStore } from '@ghost/state'
-import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
+import { useTerminalStore } from '@ghost/state'
+import { WorkspaceLayout, TabbedRightPanel } from '@/components/layout/WorkspaceLayout'
 import { FileExplorer } from '@/components/files/FileExplorer'
 import { EditorPane } from '@/components/editor/EditorPane'
 import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { PresenceSidebar } from '@/components/presence/PresenceSidebar'
 import { StatusBar } from '@/components/layout/StatusBar'
+import { TerminalPane, TerminalToggleButton } from '@/components/terminal/TerminalPane'
+import { DebugPanel } from '@/components/debug/DebugPanel'
+import { SessionReplay } from '@/components/replay/SessionReplay'
+import { AiAssistant } from '@/components/ai/AiAssistant'
 import { getCurrentUserId, getCurrentDisplayName, getSessionToken } from '@/lib/session'
 
 interface WorkspacePageProps {
@@ -28,18 +32,19 @@ interface WorkspacePageProps {
  * │  Status / Navigation Bar            │
  * ├──────────┬──────────────┬───────────┤
  * │ Files /  │   Editor     │  Chat /   │
- * │ Git      │   + Preview  │  Users    │
- * └──────────┴──────────────┴───────────┘
+ * │ Git      │   + Preview  │  Users /  │
+ * │          │              │  AI / DBG │
+ * ├──────────┴──────────────┴───────────┤
+ * │  Terminal (optional bottom drawer)  │
+ * └─────────────────────────────────────┘
  */
 export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
   const collabRef = useRef<CollaborationClient | null>(null)
-  const socketRef = useRef<Socket | null>(null)
 
   const setWorkspace = useWorkspaceStore(s => s.setWorkspace)
   const setFiles = useWorkspaceStore(s => s.setFiles)
   const addMember = useWorkspaceStore(s => s.addMember)
   const removeMember = useWorkspaceStore(s => s.removeMember)
-  const updateRuntimeState = useWorkspaceStore(s => s.updateRuntimeState)
 
   const updatePresence = usePresenceStore(s => s.updatePresence)
   const removePresence = usePresenceStore(s => s.removePresence)
@@ -51,7 +56,9 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
   const appendLog = useRuntimeStore(s => s.appendLog)
   const setPreviewUrl = useRuntimeStore(s => s.setPreviewUrl)
 
-  // ─── Bootstrap Collaboration ─────────────────────────────────────────────
+  const terminalIsOpen = useTerminalStore(s => s.isOpen)
+
+  // ─── Bootstrap Collaboration ─────────────────────────────────────────
 
   useEffect(() => {
     const wsUrl = process.env['NEXT_PUBLIC_WS_URL'] ?? 'ws://localhost:4000'
@@ -64,7 +71,6 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 10_000,
     })
-    socketRef.current = socket
 
     const collab = new CollaborationClient({
       userId: getCurrentUserId(),
@@ -162,16 +168,27 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
 
   return (
     <div className="flex flex-col h-screen bg-ghost-bg text-ghost-text overflow-hidden">
-      <StatusBar workspaceId={workspaceId} collab={collabRef} />
+      <StatusBar
+        workspaceId={workspaceId}
+        collab={collabRef}
+        terminalToggle={
+          <TerminalToggleButton workspaceId={workspaceId} collab={collabRef} />
+        }
+      />
       <WorkspaceLayout
         fileExplorer={<FileExplorer workspaceId={workspaceId} collab={collabRef} />}
         editor={<EditorPane workspaceId={workspaceId} collab={collabRef} />}
         rightPanel={
-          <div className="flex flex-col h-full">
-            <PresenceSidebar />
-            <ChatSidebar workspaceId={workspaceId} collab={collabRef} />
-          </div>
+          <TabbedRightPanel
+            chatPanel={<ChatSidebar workspaceId={workspaceId} collab={collabRef} />}
+            presencePanel={<PresenceSidebar />}
+            debugPanel={<DebugPanel workspaceId={workspaceId} collab={collabRef} />}
+            aiPanel={<AiAssistant workspaceId={workspaceId} />}
+            replayPanel={<SessionReplay workspaceId={workspaceId} />}
+          />
         }
+        bottomPanel={<TerminalPane workspaceId={workspaceId} collab={collabRef} />}
+        bottomPanelOpen={terminalIsOpen}
       />
     </div>
   )

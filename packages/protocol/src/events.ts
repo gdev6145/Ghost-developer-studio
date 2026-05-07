@@ -53,6 +53,17 @@ export type GhostEventType =
   // Sessions
   | 'session.started'
   | 'session.ended'
+  // Debug
+  | 'debug.breakpoint_set'
+  | 'debug.breakpoint_cleared'
+  | 'debug.paused'
+  | 'debug.resumed'
+  // AI
+  | 'ai.message_sent'
+  | 'ai.suggestion_applied'
+  // Terminal
+  | 'terminal.created'
+  | 'terminal.closed'
 
 // ─── Typed Event Payloads ────────────────────────────────────────────────────
 

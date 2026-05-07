@@ -170,3 +170,89 @@ export type NotificationType =
   | 'mention'
   | 'runtime'
   | 'git'
+
+// ─── Terminal ─────────────────────────────────────────────────────────────────
+
+export interface TerminalSession {
+  id: string
+  workspaceId: string
+  userId: string
+  cols: number
+  rows: number
+  shell: string
+  createdAt: string
+}
+
+// ─── Debug ───────────────────────────────────────────────────────────────────
+
+export interface Breakpoint {
+  id: string
+  fileId: string
+  filePath: string
+  line: number
+  column?: number
+  condition?: string
+  /** User who set this breakpoint */
+  userId: string
+  /** Collaborator color for the breakpoint glyph */
+  color: string
+  createdAt: string
+}
+
+export interface DebugState {
+  isPaused: boolean
+  pausedFileId?: string
+  pausedLine?: number
+  pausedReason?: 'breakpoint' | 'step' | 'exception'
+  breakpoints: Breakpoint[]
+}
+
+// ─── AI Pair Programming ──────────────────────────────────────────────────────
+
+export interface AIMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  timestamp: string
+  /** File context included with this message */
+  contextFileId?: string
+}
+
+export interface AIConversation {
+  id: string
+  workspaceId: string
+  messages: AIMessage[]
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Session Replay ───────────────────────────────────────────────────────────
+
+export interface ReplayEvent {
+  id: string
+  type: string
+  workspaceId: string
+  actorId?: string
+  timestamp: string
+  payload: Record<string, unknown>
+}
+
+// ─── Git Graph ────────────────────────────────────────────────────────────────
+
+export interface CommitNode {
+  sha: string
+  shortSha: string
+  message: string
+  author: string
+  email: string
+  timestamp: string
+  parents: string[]
+  /** Which branches point to this commit */
+  refs: string[]
+}
+
+export interface GitGraph {
+  commits: CommitNode[]
+  branches: string[]
+  head: string
+}

@@ -11,9 +11,15 @@ import { registerAuthRoutes } from './routes/auth'
 import { registerWorkspaceRoutes } from './routes/workspaces'
 import { registerChatRoutes } from './routes/chat'
 import { registerFileRoutes } from './routes/files'
+import { registerGitRoutes } from './routes/git'
+import { registerReplayRoutes } from './routes/replay'
+import { registerAIRoutes } from './routes/ai'
 import { setupCollaborationHandlers } from './handlers/collaboration'
 import { setupRuntimeHandlers } from './handlers/runtime'
+import { setupTerminalHandlers } from './handlers/terminal'
+import { setupDebugHandlers } from './handlers/debug'
 import { authMiddleware } from './middleware/auth'
+import { WorkspaceMemoryService } from './services/memory'
 
 /**
  * Bootstrap the Ghost server.
@@ -24,6 +30,7 @@ import { authMiddleware } from './middleware/auth'
  *   Redis Adapter   ─────────────────────── Socket.IO horizontal scaling
  *   Event Bus       ─────────────────────── Internal domain events
  *   Prisma          ─────────────────────── PostgreSQL persistence
+ *   WorkspaceMemory ─────────────────────── Rolling event window for AI
  */
 async function bootstrap(): Promise<void> {
   const env = validateServerEnv()
@@ -49,6 +56,8 @@ async function bootstrap(): Promise<void> {
   await app.register(registerWorkspaceRoutes, { prefix: '/api/workspaces' })
   await app.register(registerChatRoutes, { prefix: '/api/chat' })
   await app.register(registerFileRoutes, { prefix: '/api/files' })
+  await app.register(registerGitRoutes, { prefix: '/api/git' })
+  await app.register(registerReplayRoutes, { prefix: '/api/replay' })
 
   // Health check
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
@@ -60,6 +69,15 @@ async function bootstrap(): Promise<void> {
 
   await Promise.all([pubClient.connect(), subClient.connect()])
   app.log.info('Redis connected')
+
+  // ─── Workspace Memory Service ─────────────────────────────────────────────
+
+  const memoryService = new WorkspaceMemoryService(pubClient, eventBus)
+  memoryService.start()
+  app.log.info('Workspace memory service started')
+
+  // Register AI routes (requires memoryService)
+  await app.register(registerAIRoutes, { prefix: '/api/ai', memoryService })
 
   // ─── Socket.IO ───────────────────────────────────────────────────────────
 
@@ -78,6 +96,8 @@ async function bootstrap(): Promise<void> {
   // Register collaboration and runtime event handlers
   setupCollaborationHandlers(io, pubClient, eventBus)
   setupRuntimeHandlers(io, eventBus)
+  setupTerminalHandlers(io, eventBus)
+  setupDebugHandlers(io, eventBus)
 
   // ─── Start ───────────────────────────────────────────────────────────────
 

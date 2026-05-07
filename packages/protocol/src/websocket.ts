@@ -54,6 +54,18 @@ export type WsEventType =
   | 'file.created'
   | 'file.deleted'
   | 'file.renamed'
+  // Terminal (PTY over Socket.IO)
+  | 'terminal.create'
+  | 'terminal.data'
+  | 'terminal.resize'
+  | 'terminal.close'
+  | 'terminal.exit'
+  // Collaborative debugging
+  | 'debug.breakpoint_set'
+  | 'debug.breakpoint_cleared'
+  | 'debug.paused'
+  | 'debug.resumed'
+  | 'debug.step'
   // System
   | 'error'
   | 'ping'
@@ -285,6 +297,98 @@ export interface WsError extends WsEnvelope {
   }
 }
 
+// ─── Terminal Events ─────────────────────────────────────────────────────────
+
+export interface WsTerminalCreate extends WsEnvelope {
+  type: 'terminal.create'
+  payload: {
+    terminalId: string
+    cols: number
+    rows: number
+    shell?: string
+  }
+}
+
+export interface WsTerminalData extends WsEnvelope {
+  type: 'terminal.data'
+  payload: {
+    terminalId: string
+    /** Base64-encoded PTY output or raw UTF-8 input */
+    data: string
+  }
+}
+
+export interface WsTerminalResize extends WsEnvelope {
+  type: 'terminal.resize'
+  payload: {
+    terminalId: string
+    cols: number
+    rows: number
+  }
+}
+
+export interface WsTerminalClose extends WsEnvelope {
+  type: 'terminal.close'
+  payload: {
+    terminalId: string
+  }
+}
+
+export interface WsTerminalExit extends WsEnvelope {
+  type: 'terminal.exit'
+  payload: {
+    terminalId: string
+    exitCode: number
+  }
+}
+
+// ─── Debug Events ────────────────────────────────────────────────────────────
+
+export interface WsDebugBreakpointSet extends WsEnvelope {
+  type: 'debug.breakpoint_set'
+  payload: {
+    breakpointId: string
+    fileId: string
+    filePath: string
+    line: number
+    column?: number
+    condition?: string
+    userId: string
+    color: string
+  }
+}
+
+export interface WsDebugBreakpointCleared extends WsEnvelope {
+  type: 'debug.breakpoint_cleared'
+  payload: {
+    breakpointId: string
+    fileId: string
+    line: number
+  }
+}
+
+export interface WsDebugPaused extends WsEnvelope {
+  type: 'debug.paused'
+  payload: {
+    fileId: string
+    line: number
+    reason: 'breakpoint' | 'step' | 'exception'
+    frameId?: string
+  }
+}
+
+export interface WsDebugResumed extends WsEnvelope {
+  type: 'debug.resumed'
+  payload: Record<string, never>
+}
+
+export interface WsDebugStep extends WsEnvelope {
+  type: 'debug.step'
+  payload: {
+    stepType: 'over' | 'into' | 'out' | 'continue'
+  }
+}
+
 // ─── Union Type ──────────────────────────────────────────────────────────────
 
 export type WsMessage =
@@ -311,4 +415,14 @@ export type WsMessage =
   | WsFileCreated
   | WsFileDeleted
   | WsFileRenamed
+  | WsTerminalCreate
+  | WsTerminalData
+  | WsTerminalResize
+  | WsTerminalClose
+  | WsTerminalExit
+  | WsDebugBreakpointSet
+  | WsDebugBreakpointCleared
+  | WsDebugPaused
+  | WsDebugResumed
+  | WsDebugStep
   | WsError
