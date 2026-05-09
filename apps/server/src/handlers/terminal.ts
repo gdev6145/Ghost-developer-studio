@@ -1,5 +1,6 @@
 import type { Server as SocketIOServer, Socket } from 'socket.io'
 import type { IPty } from 'node-pty'
+import type { EventDispatcher } from '@ghost/events'
 import { now } from '@ghost/shared'
 
 /**
@@ -23,12 +24,12 @@ function sessionKey(workspaceId: string, terminalId: string): string {
   return `${workspaceId}:${terminalId}`
 }
 
-export function setupTerminalHandlers(io: SocketIOServer): void {
+export function setupTerminalHandlers(io: SocketIOServer, events: EventDispatcher): void {
   io.on('connection', (socket: Socket) => {
     socket.on('message', (msg: Record<string, unknown>) => {
       const type = msg['type'] as string | undefined
       if (!type?.startsWith('terminal.')) return
-      void handleTerminalMessage(socket, msg, io)
+      void handleTerminalMessage(socket, msg, io, events)
     })
 
     socket.on('disconnect', () => {
@@ -41,7 +42,8 @@ export function setupTerminalHandlers(io: SocketIOServer): void {
 async function handleTerminalMessage(
   socket: Socket,
   msg: Record<string, unknown>,
-  io: SocketIOServer
+  io: SocketIOServer,
+  events: EventDispatcher
 ): Promise<void> {
   const type = msg['type'] as string
   const workspaceId = msg['workspaceId'] as string
@@ -87,6 +89,7 @@ async function handleTerminalMessage(
       }
 
       ptySessions.set(key, pty)
+      await events.dispatch('terminal.created', workspaceId, { terminalId, shell, cols, rows }, socket.data['userId'] as string | undefined)
 
       // Broadcast PTY output to entire workspace room
       pty.onData((data: string) => {
@@ -118,6 +121,16 @@ async function handleTerminalMessage(
       const data = payload['data'] as string
       const pty = ptySessions.get(sessionKey(workspaceId, terminalId))
       pty?.write(data)
+      await events.dispatch(
+        'terminal.command',
+        workspaceId,
+        {
+          terminalId,
+          commandPreview: data.replace(/\s+/g, ' ').slice(0, 200),
+          inputLength: data.length,
+        },
+        socket.data['userId'] as string | undefined
+      )
       break
     }
 
@@ -137,6 +150,7 @@ async function handleTerminalMessage(
         pty.kill()
         ptySessions.delete(sessionKey(workspaceId, terminalId))
       }
+      await events.dispatch('terminal.closed', workspaceId, { terminalId }, socket.data['userId'] as string | undefined)
       break
     }
 

@@ -1,4 +1,5 @@
 import type { Server as SocketIOServer, Socket } from 'socket.io'
+import type { EventDispatcher } from '@ghost/events'
 import type { WsDebugBreakpoint } from '@ghost/protocol'
 import { now } from '@ghost/shared'
 
@@ -40,12 +41,12 @@ function broadcastDebugState(workspaceId: string, io: SocketIOServer): void {
   })
 }
 
-export function setupDebugHandlers(io: SocketIOServer): void {
+export function setupDebugHandlers(io: SocketIOServer, events: EventDispatcher): void {
   io.on('connection', (socket: Socket) => {
     socket.on('message', (msg: Record<string, unknown>) => {
       const type = msg['type'] as string | undefined
       if (!type?.startsWith('debug.')) return
-      handleDebugMessage(socket, msg, io)
+      void handleDebugMessage(socket, msg, io, events)
     })
 
     // When a client joins a workspace room, send them the current debug state
@@ -68,11 +69,13 @@ export function setupDebugHandlers(io: SocketIOServer): void {
 function handleDebugMessage(
   socket: Socket,
   msg: Record<string, unknown>,
-  io: SocketIOServer
-): void {
+  io: SocketIOServer,
+  events: EventDispatcher
+): Promise<void> {
   const type = msg['type'] as string
   const workspaceId = msg['workspaceId'] as string
   const payload = (msg['payload'] ?? {}) as Record<string, unknown>
+  const actorId = socket.data['userId'] as string | undefined
 
   switch (type) {
     case 'debug.breakpoint.set': {
@@ -86,17 +89,17 @@ function handleDebugMessage(
       }
       getBreakpoints(workspaceId).set(breakpointId, bp)
       broadcastDebugState(workspaceId, io)
-      break
+      return events.dispatch('debug.breakpoint_set', workspaceId, bp, actorId)
     }
 
     case 'debug.breakpoint.clear': {
       const breakpointId = payload['breakpointId'] as string
       getBreakpoints(workspaceId).delete(breakpointId)
       broadcastDebugState(workspaceId, io)
-      break
+      return events.dispatch('debug.breakpoint_clear', workspaceId, { breakpointId }, actorId)
     }
 
     default:
-      break
+      return Promise.resolve()
   }
 }

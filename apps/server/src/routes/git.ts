@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { verifyToken } from '@ghost/auth'
 import { eventBus } from '@ghost/events'
 import { GitService } from '@ghost/git'
+import { getUserId } from '../utils/auth'
 
 /**
  * Git REST routes for branch visualization and repository operations.
@@ -24,16 +24,6 @@ const git = new GitService(eventBus)
 
 const DEFAULT_GIT_LOG_LIMIT = 50
 const MAX_GIT_LOG_LIMIT = 200
-
-function getUserId(req: FastifyRequest): string | null {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  try {
-    return verifyToken(token, process.env['JWT_SECRET']!).sub
-  } catch {
-    return null
-  }
-}
 
 export async function registerGitRoutes(app: FastifyInstance): Promise<void> {
   /**

@@ -24,6 +24,10 @@ export type GhostEventType =
   | 'file.updated'
   | 'file.renamed'
   | 'file.moved'
+  // Collaboration detail
+  | 'presence.cursor'
+  | 'presence.selection'
+  | 'document.updated'
   // Workspace
   | 'workspace.created'
   | 'workspace.updated'
@@ -37,6 +41,20 @@ export type GhostEventType =
   | 'branch.deleted'
   | 'branch.merged'
   | 'branch.switched'
+  // Terminal / Debug / AI
+  | 'terminal.created'
+  | 'terminal.command'
+  | 'terminal.closed'
+  | 'debug.breakpoint_set'
+  | 'debug.breakpoint_clear'
+  | 'ai.suggestion'
+  // Durable memory records
+  | 'memory.decision'
+  | 'memory.bug_fix'
+  | 'memory.failed_experiment'
+  | 'memory.convention'
+  | 'memory.incident'
+  | 'memory.code_owner'
   // Runtime
   | 'runtime.started'
   | 'runtime.stopped'

@@ -2,6 +2,8 @@
 
 **Realtime collaborative developer operating system.**
 
+**Product message:** *Your team never loses engineering context again.*
+
 > Multiple users. Same workspace. Same files. Live cursors. Live edits. Live presence.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)
@@ -25,10 +27,10 @@ Ghost Developer Studio is a real-time collaborative coding platform built for te
 | Multiplayer Terminals | Shared PTY sessions over Socket.IO (node-pty + xterm.js) |
 | Collaborative Debugging | Shared breakpoints broadcast to all workspace members in real time |
 | Branch Visualization | Real-time git graph with commit history and branch management |
-| Session Replay | All events persisted; stream replay as NDJSON |
+| Ghost Replay™ | Replayable engineering timeline: code edits, collaboration presence, terminal commands, AI suggestions, branch + deployment actions |
 | AI Pair Programming | OpenAI-powered chat, completion, explanation, and code review |
 | AI Task Orchestrator | Multi-step goal decomposition with step-by-step approval gates |
-| Workspace Memory | Redis rolling window providing event context to every AI request |
+| Workspace Memory OS | Rolling + durable workspace memory for decisions, incidents, conventions, bug fixes, failed experiments, and ownership notes |
 | Observability | In-process Prometheus metrics, SLOs, enriched health endpoint |
 | Audit Log | Full queryable event timeline per workspace with NDJSON export |
 | RBAC | Role-based access control (owner/admin/editor/viewer) on all routes |
@@ -38,7 +40,7 @@ Ghost Developer Studio is a real-time collaborative coding platform built for te
 | Preview Environments | Ephemeral per-branch preview environments with auto-sleep |
 | Onboarding Flow | Guided setup wizard for new workspace members |
 | Reconnect Resilience | Exponential backoff reconnect with pending-op queue and status banner |
-| Deployment Profiles | Docker Compose overlays for staging and production |
+| Deployment Profiles | Docker Compose overlays for staging and production (single-node, HA-ready, regulated variants) |
 
 ```mermaid
 flowchart LR
@@ -212,6 +214,11 @@ pnpm run dev
 | `GET` | `/api/audit/:workspaceId/export` | Export events as NDJSON (admin) |
 | `POST` | `/api/ai/:workspaceId/complete` | AI code completion |
 | `POST` | `/api/ai/:workspaceId/chat` | AI chat with workspace context |
+| `GET` | `/api/memory/:workspaceId` | Query durable workspace memory entries |
+| `POST` | `/api/memory/:workspaceId` | Add a durable workspace memory record |
+| `GET` | `/api/replay/:workspaceId/query` | Query Ghost Replay timeline with filters |
+| `GET` | `/api/replay/:workspaceId/state` | Jump-to-state summary at a timestamp |
+| `GET` | `/api/replay/:workspaceId/share` | Generate replay-share link from filters |
 | `POST` | `/api/tasks/:workspaceId/start` | Start an AI task orchestration |
 | `POST` | `/api/tasks/:workspaceId/:id/approve` | Approve a pending task step |
 | `POST` | `/api/safe-edits/:workspaceId` | Propose a safe file change |
@@ -315,6 +322,12 @@ docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up
 ```
 
 See `.env.example` for all required environment variables including `LOG_LEVEL`, `CORS_ORIGIN`, `SENTRY_DSN`, and `OIDC_*` for enterprise SSO.
+
+Enterprise readiness track includes:
+- OpenID/OAuth profile baseline (`OIDC_*` environment + SSO flow integration)
+- CNCF-aligned deployment profiles (base + staging + production overlays)
+- OpenTelemetry-style trace correlation (`x-request-id` propagation across API/replay/AI flows)
+- OWASP threat-model mapping via audit + replay evidence streams
 
 ---
 

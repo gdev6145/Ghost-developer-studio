@@ -127,6 +127,16 @@ async function handleMessage(
 
       // Persist Yjs binary update to database
       void persistDocumentUpdate(workspaceId, updateMsg.payload.fileId, updateMsg.payload.update)
+      await events.dispatch(
+        'document.updated',
+        workspaceId,
+        {
+          fileId: updateMsg.payload.fileId,
+          updateSize: updateMsg.payload.update.length,
+          origin: updateMsg.payload.origin,
+        },
+        userId
+      )
       break
     }
 
@@ -142,6 +152,12 @@ async function handleMessage(
     case 'presence.update': {
       // Broadcast to entire room including sender? No – clients update themselves.
       socket.to(`workspace:${workspaceId}`).emit('message', msg)
+      if (msg.type === 'presence.cursor') {
+        await events.dispatch('presence.cursor', workspaceId, msg.payload, userId)
+      }
+      if (msg.type === 'presence.selection') {
+        await events.dispatch('presence.selection', workspaceId, msg.payload, userId)
+      }
       break
     }
 
@@ -195,6 +211,11 @@ async function handleMessage(
     case 'file.renamed': {
       // Broadcast to all workspace members
       io.to(`workspace:${workspaceId}`).emit('message', msg)
+      const mappedType =
+        msg.type === 'branch.switch'
+          ? 'branch.switched'
+          : msg.type
+      await events.dispatch(mappedType, workspaceId, msg.payload as Record<string, unknown>, userId)
       break
     }
 
