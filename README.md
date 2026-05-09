@@ -22,6 +22,12 @@ Ghost Developer Studio is a real-time collaborative coding platform built for te
 | Backend Services | Fastify APIs, auth, and collaboration handlers |
 | Desktop App | Electron wrapper for local integrations |
 | Shared Packages | Typed protocol, state stores, UI components, runtime + git modules |
+| Multiplayer Terminals | Shared PTY sessions over Socket.IO (node-pty + xterm.js) |
+| Collaborative Debugging | Shared breakpoints broadcast to all workspace members in real time |
+| Branch Visualization | Real-time git graph with commit history and branch management |
+| Session Replay | All events persisted; stream replay as NDJSON |
+| AI Pair Programming | OpenAI-powered chat, completion, explanation, and code review |
+| Workspace Memory | Redis rolling window providing event context to every AI request |
 
 ```mermaid
 flowchart LR
@@ -271,14 +277,14 @@ Contributions are welcome as the project evolves. You can contribute by:
 
 ## Future Roadmap
 
-The architecture is designed to support (not yet implemented):
+All roadmap capabilities have been implemented:
 
-- **AI pair programming** — LLM agents subscribe to the event bus
-- **Session replay** — events are persisted; replay is an event consumer
-- **Collaborative debugging** — shared breakpoints via workspace events
-- **Branch visualization** — real-time git graph
-- **Multiplayer terminals** — PTY over Socket.IO
-- **Workspace memory** — vectorized event history for AI context
+- **AI pair programming** ✅ — OpenAI-powered code completion, explanation, review, and chat via `POST /api/ai/:workspaceId/{complete,explain,review,chat}`
+- **Session replay** ✅ — all domain events persisted to PostgreSQL; replay endpoint streams NDJSON at `GET /api/replay/:workspaceId/stream`
+- **Collaborative debugging** ✅ — shared breakpoints broadcast via Socket.IO `debug.breakpoint.set / debug.breakpoint.clear`; all members see the same debug state
+- **Branch visualization** ✅ — real-time git graph with commit history, branch list, and branch creation via `GET /api/git/:workspaceId/log`
+- **Multiplayer terminals** ✅ — PTY sessions over Socket.IO using `node-pty`; any workspace member can type and all see the same output
+- **Workspace memory** ✅ — Redis sorted-set rolling window (last 100 events, 24-hour TTL) injected as context into every AI request
 
 ---
 

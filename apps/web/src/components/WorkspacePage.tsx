@@ -1,45 +1,59 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { CollaborationClient } from '@ghost/collaboration'
 import { useWorkspaceStore } from '@ghost/state'
-import { useEditorStore } from '@ghost/state'
 import { usePresenceStore } from '@ghost/state'
 import { useChatStore } from '@ghost/state'
 import { useRuntimeStore } from '@ghost/state'
+import { useTerminalStore } from '@ghost/state'
+import { useDebugStore } from '@ghost/state'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
 import { FileExplorer } from '@/components/files/FileExplorer'
 import { EditorPane } from '@/components/editor/EditorPane'
 import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { PresenceSidebar } from '@/components/presence/PresenceSidebar'
 import { StatusBar } from '@/components/layout/StatusBar'
+import { TerminalPanel } from '@/components/terminal/TerminalPanel'
+import { DebugPanel } from '@/components/debug/DebugPanel'
+import { BranchPanel } from '@/components/git/BranchPanel'
+import { AIPairPanel } from '@/components/ai/AIPairPanel'
 import { getCurrentUserId, getCurrentDisplayName, getSessionToken } from '@/lib/session'
 
 interface WorkspacePageProps {
   workspaceId: string
 }
 
+type RightPanelTab = 'members' | 'chat' | 'ai' | 'git'
+type BottomPanelTab = 'terminal' | 'debug'
+
 /**
  * Main workspace page – the primary Ghost Developer Studio experience.
  *
  * Layout:
- * ┌─────────────────────────────────────┐
- * │  Status / Navigation Bar            │
- * ├──────────┬──────────────┬───────────┤
- * │ Files /  │   Editor     │  Chat /   │
- * │ Git      │   + Preview  │  Users    │
- * └──────────┴──────────────┴───────────┘
+ * ┌─────────────────────────────────────────────────────┐
+ * │  Status / Navigation Bar                            │
+ * ├──────────┬────────────────────────┬─────────────────┤
+ * │ Explorer │   Editor + Preview     │  Right Panel    │
+ * │          │                        │  (Members/Chat/ │
+ * │          │                        │   AI/Git)       │
+ * ├──────────┴────────────────────────┴─────────────────┤
+ * │  Bottom Panel (Terminal / Debug)                    │
+ * └─────────────────────────────────────────────────────┘
  */
 export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
   const collabRef = useRef<CollaborationClient | null>(null)
   const socketRef = useRef<Socket | null>(null)
 
+  const [rightTab, setRightTab] = useState<RightPanelTab>('chat')
+  const [bottomTab, setBottomTab] = useState<BottomPanelTab>('terminal')
+  const [showBottom, setShowBottom] = useState(false)
+
   const setWorkspace = useWorkspaceStore(s => s.setWorkspace)
   const setFiles = useWorkspaceStore(s => s.setFiles)
   const addMember = useWorkspaceStore(s => s.addMember)
   const removeMember = useWorkspaceStore(s => s.removeMember)
-  const updateRuntimeState = useWorkspaceStore(s => s.updateRuntimeState)
 
   const updatePresence = usePresenceStore(s => s.updatePresence)
   const removePresence = usePresenceStore(s => s.removePresence)
@@ -50,6 +64,11 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
   const applyRuntimeState = useRuntimeStore(s => s.applyRuntimeState)
   const appendLog = useRuntimeStore(s => s.appendLog)
   const setPreviewUrl = useRuntimeStore(s => s.setPreviewUrl)
+
+  const appendTerminalOutput = useTerminalStore(s => s.appendOutput)
+  const closeTerminalSession = useTerminalStore(s => s.closeSession)
+
+  const setDebugBreakpoints = useDebugStore(s => s.setBreakpoints)
 
   // ─── Bootstrap Collaboration ─────────────────────────────────────────────
 
@@ -110,7 +129,6 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
     })
 
     collab.on('chat:message', payload => {
-      // Map to ChatMessage shape expected by the store
       addMessage({
         id: payload.messageId,
         workspaceId,
@@ -146,6 +164,20 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       if (payload.url) setPreviewUrl(payload.url)
     })
 
+    // Terminal events
+    collab.on('terminal:output', payload => {
+      appendTerminalOutput(payload.terminalId, payload.data)
+    })
+
+    collab.on('terminal:closed', payload => {
+      closeTerminalSession(payload.terminalId, payload.exitCode)
+    })
+
+    // Debug events
+    collab.on('debug:state', payload => {
+      setDebugBreakpoints(payload.breakpoints)
+    })
+
     // Connect
     socket.on('connect', () => {
       collab.joinWorkspace(getCurrentDisplayName())
@@ -160,19 +192,110 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
     }
   }, [workspaceId])
 
+  const rightTabs: { key: RightPanelTab; label: string }[] = [
+    { key: 'members', label: 'Members' },
+    { key: 'chat', label: 'Chat' },
+    { key: 'ai', label: '✦ AI' },
+    { key: 'git', label: '⎇ Git' },
+  ]
+
+  const bottomTabs: { key: BottomPanelTab; label: string }[] = [
+    { key: 'terminal', label: '⚡ Terminal' },
+    { key: 'debug', label: '🔴 Debug' },
+  ]
+
   return (
     <div className="flex flex-col h-screen bg-ghost-bg text-ghost-text overflow-hidden">
       <StatusBar workspaceId={workspaceId} collab={collabRef} />
-      <WorkspaceLayout
-        fileExplorer={<FileExplorer workspaceId={workspaceId} collab={collabRef} />}
-        editor={<EditorPane workspaceId={workspaceId} collab={collabRef} />}
-        rightPanel={
-          <div className="flex flex-col h-full">
-            <PresenceSidebar />
-            <ChatSidebar workspaceId={workspaceId} collab={collabRef} />
+
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Main workspace area */}
+        <WorkspaceLayout
+          fileExplorer={<FileExplorer workspaceId={workspaceId} collab={collabRef} />}
+          editor={<EditorPane workspaceId={workspaceId} collab={collabRef} />}
+          rightPanel={
+            <div className="flex flex-col h-full">
+              {/* Right panel tabs */}
+              <div className="flex items-center h-8 border-b border-ghost-overlay shrink-0 bg-ghost-surface">
+                {rightTabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setRightTab(tab.key)}
+                    className={[
+                      'px-3 h-full text-[10px] font-semibold transition-colors border-r border-ghost-overlay',
+                      rightTab === tab.key
+                        ? 'text-ghost-text bg-ghost-bg'
+                        : 'text-ghost-muted hover:text-ghost-text hover:bg-ghost-overlay',
+                    ].join(' ')}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex-1 overflow-hidden">
+                {rightTab === 'members' && <PresenceSidebar />}
+                {rightTab === 'chat' && (
+                  <ChatSidebar workspaceId={workspaceId} collab={collabRef} />
+                )}
+                {rightTab === 'ai' && (
+                  <AIPairPanel workspaceId={workspaceId} collab={collabRef} />
+                )}
+                {rightTab === 'git' && (
+                  <BranchPanel workspaceId={workspaceId} collab={collabRef} />
+                )}
+              </div>
+            </div>
+          }
+        />
+
+        {/* Bottom panel toggle bar */}
+        <div className="flex items-center h-7 border-t border-ghost-overlay bg-ghost-surface shrink-0">
+          {bottomTabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                if (bottomTab === tab.key && showBottom) {
+                  setShowBottom(false)
+                } else {
+                  setBottomTab(tab.key)
+                  setShowBottom(true)
+                }
+              }}
+              className={[
+                'px-3 h-full text-[10px] font-semibold transition-colors border-r border-ghost-overlay',
+                (showBottom && bottomTab === tab.key)
+                  ? 'text-ghost-text bg-ghost-bg'
+                  : 'text-ghost-muted hover:text-ghost-text hover:bg-ghost-overlay',
+              ].join(' ')}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <div className="flex-1" />
+          {showBottom && (
+            <button
+              onClick={() => setShowBottom(false)}
+              className="px-3 h-full text-ghost-muted hover:text-ghost-text text-xs transition-colors"
+              title="Close panel"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* Bottom panel content */}
+        {showBottom && (
+          <div className="h-64 border-t border-ghost-overlay shrink-0 overflow-hidden">
+            {bottomTab === 'terminal' && (
+              <TerminalPanel workspaceId={workspaceId} collab={collabRef} />
+            )}
+            {bottomTab === 'debug' && (
+              <DebugPanel workspaceId={workspaceId} collab={collabRef} />
+            )}
           </div>
-        }
-      />
+        )}
+      </div>
     </div>
   )
 }
