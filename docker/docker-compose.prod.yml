@@ -1,0 +1,102 @@
+version: '3.9'
+
+# ─── Ghost Developer Studio — Production overlay ───────────────────────────────
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Changes from base:
+#   - Uses versioned image tags from registry
+#   - Disables docker.sock mount for runtime (use external runner)
+#   - Enforces CORS to specific origin
+#   - Restricts PostgreSQL to internal network (no external port exposure)
+#   - Enables Redis AOF persistence with replica configuration
+#   - Applies resource limits and replica counts
+
+services:
+  server:
+    image: ${REGISTRY:-ghcr.io/ghost-developer-studio}/server:${IMAGE_TAG:-latest}
+    build: ~
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: warn
+      CORS_ORIGIN: ${PRODUCTION_WEB_URL}
+      SENTRY_DSN: ${PRODUCTION_SENTRY_DSN:-}
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    # Do NOT mount docker socket in production — workspace runtime containers
+    # must be launched via an external container orchestrator
+    volumes: []
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    restart: always
+
+  web:
+    image: ${REGISTRY:-ghcr.io/ghost-developer-studio}/web:${IMAGE_TAG:-latest}
+    build: ~
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_WS_URL: ${PRODUCTION_WS_URL}
+      NEXT_PUBLIC_API_URL: ${PRODUCTION_API_URL}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+    restart: always
+
+  postgres:
+    # In production, use a managed PostgreSQL service (e.g. AWS RDS, Cloud SQL).
+    # This definition is retained for self-hosted deployments.
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: []  # Do NOT expose PostgreSQL externally in production
+    volumes:
+      - prod_postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  redis:
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
+    ports: []  # Do NOT expose Redis externally in production
+    volumes:
+      - prod_redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  prod_postgres_data:
+    name: ghost_prod_postgres_data
+  prod_redis_data:
+    name: ghost_prod_redis_data

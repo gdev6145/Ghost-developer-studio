@@ -26,6 +26,18 @@ const serverEnvSchema = z.object({
   // Docker
   DOCKER_HOST: z.string().default('unix:///var/run/docker.sock'),
   RUNTIME_NETWORK: z.string().default('ghost_runtime'),
+
+  // Observability
+  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).optional(),
+
+  // Security
+  CORS_ORIGIN: z.string().optional(),
+
+  // SSO / OIDC (optional enterprise identity)
+  OIDC_ISSUER_URL: z.string().url().optional(),
+  OIDC_CLIENT_ID: z.string().optional(),
+  OIDC_CLIENT_SECRET: z.string().optional(),
+  OIDC_REDIRECT_URI: z.string().url().optional(),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>
