@@ -1,18 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { db } from '@ghost/database'
-import { verifyToken } from '@ghost/auth'
 import { generateId } from '@ghost/shared'
-
-function getUserId(req: FastifyRequest): string | null {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  try {
-    const payload = verifyToken(token, process.env['JWT_SECRET']!)
-    return payload.sub
-  } catch {
-    return null
-  }
-}
+import { requireAdminAccess } from '../middleware/rbac'
+import { getUserId } from '../utils/auth'
 
 export async function registerWorkspaceRoutes(app: FastifyInstance): Promise<void> {
   /**
@@ -105,7 +95,7 @@ export async function registerWorkspaceRoutes(app: FastifyInstance): Promise<voi
 
   /**
    * POST /api/workspaces/:id/members
-   * Invite a user to a workspace
+   * Invite a user to a workspace — requires admin or owner role
    */
   app.post(
     '/:id/members',
@@ -116,10 +106,10 @@ export async function registerWorkspaceRoutes(app: FastifyInstance): Promise<voi
       }>,
       reply: FastifyReply
     ) => {
-      const actorId = getUserId(req)
-      if (!actorId) return reply.status(401).send({ error: 'Unauthorized' })
-
       const { id: workspaceId } = req.params
+      const access = await requireAdminAccess(req, reply, workspaceId)
+      if (!access) return
+
       const { userId, role = 'editor' } = req.body
 
       const member = await db.workspaceMember.create({

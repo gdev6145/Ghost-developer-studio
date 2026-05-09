@@ -1,9 +1,9 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { verifyToken } from '@ghost/auth'
 import { generateId, now } from '@ghost/shared'
 import { aiRequestsTotal } from '@ghost/observability'
 import type { WorkspaceMemoryService } from '../services/memory'
 import type { Redis } from 'ioredis'
+import { getUserId } from '../utils/auth'
 
 /**
  * AI Task Orchestration routes — multi-step task execution with checkpoints.
@@ -42,16 +42,6 @@ export interface OrchestratedTask {
   steps: TaskStep[]
   createdAt: string
   updatedAt: string
-}
-
-function getUserId(req: FastifyRequest): string | null {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  try {
-    return verifyToken(token, process.env['JWT_SECRET']!).sub
-  } catch {
-    return null
-  }
 }
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'

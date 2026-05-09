@@ -1,17 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { db } from '@ghost/database'
-import { verifyToken } from '@ghost/auth'
 import { getLanguageFromPath, generateId } from '@ghost/shared'
-
-function getUserId(req: FastifyRequest): string | null {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  try {
-    return verifyToken(token, process.env['JWT_SECRET']!).sub
-  } catch {
-    return null
-  }
-}
+import { requireWriteAccess } from '../middleware/rbac'
+import { getUserId } from '../utils/auth'
 
 export async function registerFileRoutes(app: FastifyInstance): Promise<void> {
   /**
@@ -66,7 +57,7 @@ export async function registerFileRoutes(app: FastifyInstance): Promise<void> {
 
   /**
    * POST /api/files/:workspaceId
-   * Create a file
+   * Create a file — requires editor or above
    */
   app.post(
     '/:workspaceId',
@@ -77,8 +68,8 @@ export async function registerFileRoutes(app: FastifyInstance): Promise<void> {
       }>,
       reply: FastifyReply
     ) => {
-      const userId = getUserId(req)
-      if (!userId) return reply.status(401).send({ error: 'Unauthorized' })
+      const access = await requireWriteAccess(req, reply, req.params.workspaceId)
+      if (!access) return
 
       const { path, type = 'file', content } = req.body
       const name = path.split('/').pop() ?? path
@@ -101,7 +92,7 @@ export async function registerFileRoutes(app: FastifyInstance): Promise<void> {
 
   /**
    * DELETE /api/files/:workspaceId/:fileId
-   * Delete a file
+   * Delete a file — requires editor or above
    */
   app.delete(
     '/:workspaceId/:fileId',
@@ -109,8 +100,8 @@ export async function registerFileRoutes(app: FastifyInstance): Promise<void> {
       req: FastifyRequest<{ Params: { workspaceId: string; fileId: string } }>,
       reply: FastifyReply
     ) => {
-      const userId = getUserId(req)
-      if (!userId) return reply.status(401).send({ error: 'Unauthorized' })
+      const access = await requireWriteAccess(req, reply, req.params.workspaceId)
+      if (!access) return
 
       await db.file.delete({ where: { id: req.params.fileId } })
       return reply.status(204).send()

@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { verifyToken } from '@ghost/auth'
 import { pluginRegistry } from '@ghost/plugins'
+import { getUserId } from '../utils/auth'
 
 /**
  * Plugin management routes.
@@ -11,23 +11,13 @@ import { pluginRegistry } from '@ghost/plugins'
  *   GET  /api/plugins/panels   — list all plugin UI panels
  */
 
-function getAuthUser(req: FastifyRequest): string | null {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  try {
-    return verifyToken(token, process.env['JWT_SECRET']!).sub
-  } catch {
-    return null
-  }
-}
-
 export async function registerPluginRoutes(app: FastifyInstance): Promise<void> {
   /**
    * GET /api/plugins
    * List all registered plugins.
    */
   app.get('/', async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = getAuthUser(req)
+    const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Unauthorized' })
     return reply.send({ plugins: pluginRegistry.list() })
   })
@@ -37,7 +27,7 @@ export async function registerPluginRoutes(app: FastifyInstance): Promise<void> 
    * List all commands contributed by registered plugins.
    */
   app.get('/commands', async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = getAuthUser(req)
+    const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Unauthorized' })
 
     const commands = pluginRegistry.getAllCommands().map(({ pluginId, command }) => ({
@@ -55,7 +45,7 @@ export async function registerPluginRoutes(app: FastifyInstance): Promise<void> 
    * List all UI panels contributed by registered plugins.
    */
   app.get('/panels', async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = getAuthUser(req)
+    const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Unauthorized' })
 
     const panels = pluginRegistry.getAllPanels().map(({ pluginId, panel }) => ({

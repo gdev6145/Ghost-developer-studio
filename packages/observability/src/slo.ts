@@ -39,7 +39,7 @@ export const apiAvailabilitySlo: SloDefinition = {
 }
 
 /**
- * API Latency SLO: 95% of API requests should complete within 500ms.
+ * API Latency SLO: 95% of sampled request durations should be below 500ms.
  */
 export const apiLatencySlo: SloDefinition = {
   name: 'api_latency_p95',
@@ -47,11 +47,11 @@ export const apiLatencySlo: SloDefinition = {
   target: 95,
   evaluate(): number {
     const snap = registry.snapshot()
-    const hist = snap['ghost_http_request_duration_ms'] as Array<{ labels: Record<string, string>; count: number; p99: number }> | undefined
+    const hist = snap['ghost_http_request_duration_ms'] as Array<{ labels: Record<string, string>; count: number; p95: number }> | undefined
     if (!hist || hist.length === 0) return 100
-    // Compliance = percentage of entries where p99 <= 500ms
+    // Compliance = percentage of histogram series where p95 <= 500ms
     const total = hist.length
-    const compliant = hist.filter(h => h.p99 <= 500).length
+    const compliant = hist.filter(h => (h.p95 ?? h.count) <= 500).length
     return (compliant / total) * 100
   },
 }

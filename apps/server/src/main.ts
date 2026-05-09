@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import rateLimit from '@fastify/rate-limit'
 import { Server as SocketIOServer } from 'socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
 import { createClient } from 'ioredis'
@@ -15,6 +16,7 @@ import {
 } from '@ghost/observability'
 import { evaluateSlos } from '@ghost/observability'
 import { pluginRegistry } from '@ghost/plugins'
+import { activityFeedPlugin } from '@ghost/plugins'
 
 import { registerAuthRoutes } from './routes/auth'
 import { registerWorkspaceRoutes } from './routes/workspaces'
@@ -26,6 +28,9 @@ import { createAiRoutes } from './routes/ai'
 import { createTaskRoutes } from './routes/tasks'
 import { registerAuditRoutes } from './routes/audit'
 import { registerPluginRoutes } from './routes/plugins'
+import { registerSafeEditRoutes } from './routes/safe-edits'
+import { registerPreviewRoutes } from './routes/previews'
+import { registerTemplateRoutes } from './routes/templates'
 import { setupCollaborationHandlers } from './handlers/collaboration'
 import { setupRuntimeHandlers } from './handlers/runtime'
 import { setupTerminalHandlers } from './handlers/terminal'
@@ -88,6 +93,18 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   })
 
+  // ─── Rate Limiting ───────────────────────────────────────────────────────
+
+  await app.register(rateLimit, {
+    max: 200,
+    timeWindow: 60_000,
+    addHeaders: {
+      'x-ratelimit-limit': true,
+      'x-ratelimit-remaining': true,
+      'x-ratelimit-reset': true,
+    },
+  })
+
   // ─── Request / Response metrics hook ─────────────────────────────────────
 
   app.addHook('onRequest', async (req) => {
@@ -115,6 +132,9 @@ async function bootstrap(): Promise<void> {
   await app.register(registerReplayRoutes, { prefix: '/api/replay' })
   await app.register(registerAuditRoutes, { prefix: '/api/audit' })
   await app.register(registerPluginRoutes, { prefix: '/api/plugins' })
+  await app.register(registerSafeEditRoutes, { prefix: '/api/safe-edits' })
+  await app.register(registerPreviewRoutes, { prefix: '/api/previews' })
+  await app.register(registerTemplateRoutes, { prefix: '/api/templates' })
 
   // ─── Health check (enriched) ──────────────────────────────────────────────
 
@@ -187,6 +207,23 @@ async function bootstrap(): Promise<void> {
   // Register AI routes (needs memory service reference)
   await app.register(createAiRoutes(memory), { prefix: '/api/ai' })
   await app.register(createTaskRoutes(memory, pubClient), { prefix: '/api/tasks' })
+
+  // ─── Plugin Registry — register built-in plugins ─────────────────────────
+
+  await pluginRegistry.register(activityFeedPlugin, {
+    workspaceId: 'system',
+    userId: 'system',
+    emit: (type, payload) => void eventBus.dispatch(type, 'system', payload),
+    getMemory: async (key) => pubClient.get(`plugin:mem:${key}`),
+    setMemory: async (key, value, ttl) => {
+      if (ttl) {
+        await pubClient.setex(`plugin:mem:${key}`, ttl, value)
+      } else {
+        await pubClient.set(`plugin:mem:${key}`, value)
+      }
+    },
+  })
+  app.log.info('Built-in plugins registered')
 
   // ─── Socket.IO ───────────────────────────────────────────────────────────
 

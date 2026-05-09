@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { verifyToken } from '@ghost/auth'
 import { db } from '@ghost/database'
+import { getUserId } from '../utils/auth'
 
 /**
  * Audit log routes — queryable history of workspace events.
@@ -9,16 +9,6 @@ import { db } from '@ghost/database'
  *   GET /api/audit/:workspaceId          — list events (filterable by type, actor, date range)
  *   GET /api/audit/:workspaceId/export   — export events as NDJSON
  */
-
-function getAuthUser(req: FastifyRequest): string | null {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  try {
-    return verifyToken(token, process.env['JWT_SECRET']!).sub
-  } catch {
-    return null
-  }
-}
 
 export async function registerAuditRoutes(app: FastifyInstance): Promise<void> {
   /**
@@ -49,7 +39,7 @@ export async function registerAuditRoutes(app: FastifyInstance): Promise<void> {
       }>,
       reply: FastifyReply
     ) => {
-      const userId = getAuthUser(req)
+      const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Unauthorized' })
 
       const { workspaceId } = req.params
@@ -109,7 +99,7 @@ export async function registerAuditRoutes(app: FastifyInstance): Promise<void> {
       }>,
       reply: FastifyReply
     ) => {
-      const userId = getAuthUser(req)
+      const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Unauthorized' })
 
       const { workspaceId } = req.params

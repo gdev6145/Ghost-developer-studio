@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import { verifyToken } from '@ghost/auth'
 import { db } from '@ghost/database'
 import type { WorkspaceRole } from '@ghost/database'
+import { getUserId } from '../utils/auth'
 
 /**
  * RBAC middleware for workspace-scoped routes.

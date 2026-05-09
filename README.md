@@ -27,7 +27,18 @@ Ghost Developer Studio is a real-time collaborative coding platform built for te
 | Branch Visualization | Real-time git graph with commit history and branch management |
 | Session Replay | All events persisted; stream replay as NDJSON |
 | AI Pair Programming | OpenAI-powered chat, completion, explanation, and code review |
+| AI Task Orchestrator | Multi-step goal decomposition with step-by-step approval gates |
 | Workspace Memory | Redis rolling window providing event context to every AI request |
+| Observability | In-process Prometheus metrics, SLOs, enriched health endpoint |
+| Audit Log | Full queryable event timeline per workspace with NDJSON export |
+| RBAC | Role-based access control (owner/admin/editor/viewer) on all routes |
+| Safe Edits | Proposed file changes with risk scoring and approval workflow |
+| Plugin SDK | Typed extension API for commands, UI panels, events, and routes |
+| Workspace Templates | Starter kits (Node API, Next.js, Python FastAPI) seeded on creation |
+| Preview Environments | Ephemeral per-branch preview environments with auto-sleep |
+| Onboarding Flow | Guided setup wizard for new workspace members |
+| Reconnect Resilience | Exponential backoff reconnect with pending-op queue and status banner |
+| Deployment Profiles | Docker Compose overlays for staging and production |
 
 ```mermaid
 flowchart LR
@@ -75,18 +86,20 @@ ghost/
 │   └── server/       # Fastify backend + Socket.IO
 │
 ├── packages/
-│   ├── protocol/     # Shared typed contracts (WS messages, interfaces)
-│   ├── shared/       # Common utilities (generateId, colors, debounce)
-│   ├── config/       # Environment validation (Zod schemas)
-│   ├── events/       # Internal event bus (EventDispatcher)
-│   ├── collaboration/# Yjs engine + CollaborationClient
-│   ├── editor/       # Monaco bindings + Ghost theme
-│   ├── state/        # Zustand stores (workspace, editor, presence, chat, runtime)
-│   ├── ui/           # Shared React components (Avatar, StatusBadge, Layout)
-│   ├── database/     # Prisma schema + PostgreSQL client
-│   ├── auth/         # JWT sign/verify utilities
-│   ├── runtime/      # Docker orchestration (RuntimeManager)
-│   └── git/          # Git integration (simple-git wrapper)
+│   ├── protocol/      # Shared typed contracts (WS messages, interfaces)
+│   ├── shared/        # Common utilities (generateId, colors, debounce)
+│   ├── config/        # Environment validation (Zod schemas)
+│   ├── events/        # Internal event bus (EventDispatcher)
+│   ├── collaboration/ # Yjs engine + CollaborationClient (with reconnect + pending-op queue)
+│   ├── observability/ # In-process metrics registry, SLOs, Prometheus exposition
+│   ├── plugins/       # Plugin SDK: types, registry, built-in plugins
+│   ├── editor/        # Monaco bindings + Ghost theme
+│   ├── state/         # Zustand stores (workspace, editor, presence, chat, runtime)
+│   ├── ui/            # Shared React components (Avatar, StatusBadge, Layout)
+│   ├── database/      # Prisma schema + PostgreSQL client
+│   ├── auth/          # JWT sign/verify utilities
+│   ├── runtime/       # Docker orchestration (RuntimeManager)
+│   └── git/           # Git integration (simple-git wrapper)
 │
 ├── docker/           # Docker Compose + Dockerfiles
 ├── scripts/          # Dev setup scripts
@@ -178,11 +191,37 @@ pnpm run dev
 
 ### Access
 
-| Service | URL                       |
-|---------|---------------------------|
-| Web App | http://localhost:3000      |
-| Server  | http://localhost:4000      |
-| Health  | http://localhost:4000/health |
+| Service      | URL                                    |
+|--------------|----------------------------------------|
+| Web App      | http://localhost:3000                  |
+| Server       | http://localhost:4000                  |
+| Health       | http://localhost:4000/health           |
+| Metrics      | http://localhost:4000/metrics          |
+
+---
+
+## API Reference (Key Endpoints)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/register` | Register a new user |
+| `POST` | `/auth/login` | Log in, receive JWT |
+| `GET` | `/api/workspaces` | List workspaces for the current user |
+| `POST` | `/api/workspaces` | Create a workspace |
+| `GET` | `/api/audit/:workspaceId` | Query workspace audit log |
+| `GET` | `/api/audit/:workspaceId/export` | Export events as NDJSON (admin) |
+| `POST` | `/api/ai/:workspaceId/complete` | AI code completion |
+| `POST` | `/api/ai/:workspaceId/chat` | AI chat with workspace context |
+| `POST` | `/api/tasks/:workspaceId/start` | Start an AI task orchestration |
+| `POST` | `/api/tasks/:workspaceId/:id/approve` | Approve a pending task step |
+| `POST` | `/api/safe-edits/:workspaceId` | Propose a safe file change |
+| `POST` | `/api/safe-edits/:workspaceId/:id/approve` | Approve and apply a safe edit |
+| `GET` | `/api/templates` | List workspace templates |
+| `POST` | `/api/templates/:id/apply/:wsId` | Apply a template to a workspace |
+| `POST` | `/api/previews/:workspaceId` | Create/wake a preview environment |
+| `GET` | `/api/plugins` | List registered plugins |
+| `GET` | `/metrics` | Prometheus metrics endpoint |
+| `GET` | `/health` | Enriched health check with SLOs |
 
 ---
 
@@ -195,11 +234,12 @@ import type { Workspace, WsMessage, PresenceState } from '@ghost/protocol'
 ```
 
 ### `@ghost/collaboration`
-The realtime collaboration engine:
+The realtime collaboration engine with reconnect resilience:
 ```typescript
 const collab = new CollaborationClient({ userId, workspaceId, socket })
 collab.joinWorkspace(displayName)
 collab.openFile(fileId)
+collab.on('connection:state', state => { /* 'connected' | 'reconnecting' | 'disconnected' */ })
 collab.on('document:updated', fileId => { /* re-render */ })
 ```
 
@@ -221,6 +261,28 @@ eventBus.on('file.updated', async event => {
 await eventBus.dispatch('user.joined', workspaceId, { userId })
 ```
 
+### `@ghost/observability`
+Zero-dependency in-process metrics and SLOs:
+```typescript
+import { httpRequestsTotal, registry, evaluateSlos } from '@ghost/observability'
+httpRequestsTotal.inc({ method: 'GET', route: '/api/workspaces', status_code: '200' })
+console.log(registry.prometheusFormat()) // Prometheus text format
+const slos = evaluateSlos()              // [{name, target, current, compliant}]
+```
+
+### `@ghost/plugins`
+Plugin SDK for extending Ghost Developer Studio:
+```typescript
+import { pluginRegistry, type GhostPlugin } from '@ghost/plugins'
+
+const myPlugin: GhostPlugin = {
+  manifest: { id: 'my-plugin', name: 'My Plugin', version: '1.0.0', extensions: ['command'] },
+  commands: [{ id: 'my-plugin.hello', label: 'Say Hello', handler: () => console.log('Hello!') }],
+  events: [{ eventType: 'file.updated', handler: async (payload, ctx) => { /* react to changes */ } }],
+}
+await pluginRegistry.register(myPlugin, context)
+```
+
 ---
 
 ## Development
@@ -235,15 +297,24 @@ pnpm run test       # Tests
 
 ---
 
-## Docker Deployment
+## Deployment
 
+### Development
 ```bash
-# Full stack
 docker compose -f docker/docker-compose.yml up -d
-
-# Infrastructure only (for local dev)
-docker compose -f docker/docker-compose.yml up -d postgres redis
 ```
+
+### Staging
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.staging.yml up -d
+```
+
+### Production
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up -d
+```
+
+See `.env.example` for all required environment variables including `LOG_LEVEL`, `CORS_ORIGIN`, `SENTRY_DSN`, and `OIDC_*` for enterprise SSO.
 
 ---
 
@@ -277,14 +348,19 @@ Contributions are welcome as the project evolves. You can contribute by:
 
 ## Future Roadmap
 
-Planned next milestones for Ghost Developer Studio:
+What's been implemented across all 5 milestones:
 
-- **Production readiness and ops** — environment hardening, structured observability, and deployment profiles for cloud environments
-- **Enterprise identity and access** — SSO/SAML/OIDC, workspace-level RBAC, and audit trails for collaboration and runtime actions
-- **Collaboration quality upgrades** — richer review workflows, conflict-resolution UX, and stronger offline/reconnect behavior
-- **AI workflow expansion** — project-aware assistants, task orchestration, and safer guardrails for automated edits
-- **Desktop parity and local integrations** — deeper native filesystem/runtime controls and feature parity with the web experience
-- **Extensibility platform** — plugin APIs, event hooks, and integration surfaces for external tools and internal automation
+- ✅ **Milestone A — Stabilization** — Turbo fix, in-process observability + Prometheus metrics, SLOs, enriched health check, env hardening, staging/prod Docker overlays
+- ✅ **Milestone B — Collaboration Maturity** — Exponential backoff reconnect, pending-op queue, connection state, `ReconnectBanner`, `ConflictResolutionModal`
+- ✅ **Milestone C — Security & Governance** — RBAC middleware (owner/admin/editor/viewer), `/api/audit` with NDJSON export, `AuditPanel` UI, SSO/OIDC env foundation
+- ✅ **Milestone D — AI Evolution** — Multi-step task orchestration with approval gates, safe-edit guardrails with risk scoring, `TaskOrchestratorPanel` UI
+- ✅ **Milestone E — Extensibility** — Full Plugin SDK (`@ghost/plugins`), plugin registry, `/api/plugins` route, built-in Activity Feed plugin, plugin event bridge
+
+Planned next milestones:
+
+- **Milestone F — Desktop parity** — Feature parity between web and Electron, local filesystem mounts, offline mode
+- **Milestone G — Enterprise scale** — Multi-tenant hardening, horizontal scaling benchmarks, disaster recovery playbooks
+- **Milestone H — Product growth** — Usage analytics, community plugin marketplace, contributor program
 
 ---
 
