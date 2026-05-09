@@ -54,6 +54,23 @@ export type WsEventType =
   | 'file.created'
   | 'file.deleted'
   | 'file.renamed'
+  // Terminal (multiplayer PTY)
+  | 'terminal.create'
+  | 'terminal.input'
+  | 'terminal.output'
+  | 'terminal.resize'
+  | 'terminal.close'
+  | 'terminal.closed'
+  // Collaborative debugging
+  | 'debug.breakpoint.set'
+  | 'debug.breakpoint.clear'
+  | 'debug.state'
+  // Session replay
+  | 'replay.start'
+  | 'replay.event'
+  | 'replay.end'
+  // AI pair programming
+  | 'ai.suggestion'
   // System
   | 'error'
   | 'ping'
@@ -285,6 +302,124 @@ export interface WsError extends WsEnvelope {
   }
 }
 
+// ─── Terminal Events (Multiplayer PTY) ───────────────────────────────────────
+
+export interface WsTerminalCreate extends WsEnvelope {
+  type: 'terminal.create'
+  payload: {
+    terminalId: string
+    cols: number
+    rows: number
+    shell?: string
+  }
+}
+
+export interface WsTerminalInput extends WsEnvelope {
+  type: 'terminal.input'
+  payload: {
+    terminalId: string
+    data: string
+  }
+}
+
+export interface WsTerminalOutput extends WsEnvelope {
+  type: 'terminal.output'
+  payload: {
+    terminalId: string
+    data: string
+  }
+}
+
+export interface WsTerminalResize extends WsEnvelope {
+  type: 'terminal.resize'
+  payload: {
+    terminalId: string
+    cols: number
+    rows: number
+  }
+}
+
+export interface WsTerminalClose extends WsEnvelope {
+  type: 'terminal.close'
+  payload: {
+    terminalId: string
+  }
+}
+
+export interface WsTerminalClosed extends WsEnvelope {
+  type: 'terminal.closed'
+  payload: {
+    terminalId: string
+    exitCode?: number
+  }
+}
+
+// ─── Collaborative Debugging Events ──────────────────────────────────────────
+
+export interface WsDebugBreakpoint {
+  fileId: string
+  path: string
+  line: number
+  condition?: string
+}
+
+export interface WsDebugBreakpointSet extends WsEnvelope {
+  type: 'debug.breakpoint.set'
+  payload: WsDebugBreakpoint & { breakpointId: string }
+}
+
+export interface WsDebugBreakpointClear extends WsEnvelope {
+  type: 'debug.breakpoint.clear'
+  payload: {
+    breakpointId: string
+  }
+}
+
+export interface WsDebugState extends WsEnvelope {
+  type: 'debug.state'
+  payload: {
+    breakpoints: Array<WsDebugBreakpoint & { breakpointId: string }>
+  }
+}
+
+// ─── Session Replay Events ────────────────────────────────────────────────────
+
+export interface WsReplayStart extends WsEnvelope {
+  type: 'replay.start'
+  payload: {
+    from?: string // ISO timestamp
+    to?: string   // ISO timestamp
+    speed?: number
+  }
+}
+
+export interface WsReplayEvent extends WsEnvelope {
+  type: 'replay.event'
+  payload: {
+    eventType: string
+    originalTimestamp: string
+    data: Record<string, unknown>
+  }
+}
+
+export interface WsReplayEnd extends WsEnvelope {
+  type: 'replay.end'
+  payload: {
+    totalEvents: number
+  }
+}
+
+// ─── AI Pair Programming Events ───────────────────────────────────────────────
+
+export interface WsAiSuggestion extends WsEnvelope {
+  type: 'ai.suggestion'
+  payload: {
+    requestId: string
+    suggestion: string
+    context?: string
+  }
+}
+
 // ─── Union Type ──────────────────────────────────────────────────────────────
 
 export type WsMessage =
@@ -311,4 +446,17 @@ export type WsMessage =
   | WsFileCreated
   | WsFileDeleted
   | WsFileRenamed
+  | WsTerminalCreate
+  | WsTerminalInput
+  | WsTerminalOutput
+  | WsTerminalResize
+  | WsTerminalClose
+  | WsTerminalClosed
+  | WsDebugBreakpointSet
+  | WsDebugBreakpointClear
+  | WsDebugState
+  | WsReplayStart
+  | WsReplayEvent
+  | WsReplayEnd
+  | WsAiSuggestion
   | WsError

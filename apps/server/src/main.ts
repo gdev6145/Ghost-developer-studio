@@ -11,9 +11,15 @@ import { registerAuthRoutes } from './routes/auth'
 import { registerWorkspaceRoutes } from './routes/workspaces'
 import { registerChatRoutes } from './routes/chat'
 import { registerFileRoutes } from './routes/files'
+import { registerGitRoutes } from './routes/git'
+import { registerReplayRoutes } from './routes/replay'
+import { createAiRoutes } from './routes/ai'
 import { setupCollaborationHandlers } from './handlers/collaboration'
 import { setupRuntimeHandlers } from './handlers/runtime'
+import { setupTerminalHandlers } from './handlers/terminal'
+import { setupDebugHandlers } from './handlers/debug'
 import { authMiddleware } from './middleware/auth'
+import { WorkspaceMemoryService } from './services/memory'
 
 /**
  * Bootstrap the Ghost server.
@@ -49,6 +55,8 @@ async function bootstrap(): Promise<void> {
   await app.register(registerWorkspaceRoutes, { prefix: '/api/workspaces' })
   await app.register(registerChatRoutes, { prefix: '/api/chat' })
   await app.register(registerFileRoutes, { prefix: '/api/files' })
+  await app.register(registerGitRoutes, { prefix: '/api/git' })
+  await app.register(registerReplayRoutes, { prefix: '/api/replay' })
 
   // Health check
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
@@ -60,6 +68,29 @@ async function bootstrap(): Promise<void> {
 
   await Promise.all([pubClient.connect(), subClient.connect()])
   app.log.info('Redis connected')
+
+  // ─── Workspace Memory ────────────────────────────────────────────────────
+
+  const memory = new WorkspaceMemoryService(pubClient)
+
+  // Persist all domain events into the rolling Redis window + event log
+  eventBus.onAny(event => {
+    void memory.push(event)
+    // Persist to PostgreSQL event log for replay
+    void db.event.create({
+      data: {
+        id: event.id,
+        workspaceId: event.workspaceId,
+        actorId: event.actorId ?? null,
+        type: event.type,
+        payload: event.payload as Record<string, unknown>,
+        timestamp: new Date(event.timestamp),
+      },
+    }).catch(() => { /* non-fatal */ })
+  })
+
+  // Register AI routes (needs memory service reference)
+  await app.register(createAiRoutes(memory), { prefix: '/api/ai' })
 
   // ─── Socket.IO ───────────────────────────────────────────────────────────
 
@@ -78,6 +109,8 @@ async function bootstrap(): Promise<void> {
   // Register collaboration and runtime event handlers
   setupCollaborationHandlers(io, pubClient, eventBus)
   setupRuntimeHandlers(io, eventBus)
+  setupTerminalHandlers(io)
+  setupDebugHandlers(io)
 
   // ─── Start ───────────────────────────────────────────────────────────────
 

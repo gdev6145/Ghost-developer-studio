@@ -15,6 +15,10 @@ import type {
   WsFileCreated,
   WsFileDeleted,
   WsFileRenamed,
+  WsTerminalOutput,
+  WsTerminalClosed,
+  WsDebugState,
+  WsAiSuggestion,
 } from '@ghost/protocol'
 import { DocumentManager } from './document-manager'
 import { AwarenessManager } from './awareness'
@@ -40,6 +44,10 @@ export type CollabEventMap = {
   'branch:switched': (payload: WsBranchSwitch['payload']) => void
   'member:joined': (payload: WsWorkspaceJoin['payload']) => void
   'member:left': (payload: WsWorkspaceLeave['payload']) => void
+  'terminal:output': (payload: WsTerminalOutput['payload']) => void
+  'terminal:closed': (payload: WsTerminalClosed['payload']) => void
+  'debug:state': (payload: WsDebugState['payload']) => void
+  'ai:suggestion': (payload: WsAiSuggestion['payload']) => void
   reconnect: () => void
   disconnect: () => void
 }
@@ -317,6 +325,26 @@ export class CollaborationClient {
       case 'workspace.leave': {
         const payload = msg['payload'] as WsWorkspaceLeave['payload']
         this.emit('member:left', payload)
+        break
+      }
+      case 'terminal.output': {
+        const payload = msg['payload'] as WsTerminalOutput['payload']
+        this.emit('terminal:output', payload)
+        break
+      }
+      case 'terminal.closed': {
+        const payload = msg['payload'] as WsTerminalClosed['payload']
+        this.emit('terminal:closed', payload)
+        break
+      }
+      case 'debug.state': {
+        const payload = msg['payload'] as WsDebugState['payload']
+        this.emit('debug:state', payload)
+        break
+      }
+      case 'ai.suggestion': {
+        const payload = msg['payload'] as WsAiSuggestion['payload']
+        this.emit('ai:suggestion', payload)
         break
       }
       default:
