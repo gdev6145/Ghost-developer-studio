@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { verifyToken } from '@ghost/auth'
+import { eventBus } from '@ghost/events'
 import type { WorkspaceMemoryService } from '../services/memory'
+import { getUserId } from '../utils/auth'
 
 /**
  * AI Pair Programming routes — code assistance powered by OpenAI.
@@ -16,16 +17,6 @@ import type { WorkspaceMemoryService } from '../services/memory'
  *
  * Requires environment variable: OPENAI_API_KEY
  */
-
-function getUserId(req: FastifyRequest): string | null {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  try {
-    return verifyToken(token, process.env['JWT_SECRET']!).sub
-  } catch {
-    return null
-  }
-}
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
 const DEFAULT_MODEL = 'gpt-4o-mini'
@@ -116,6 +107,12 @@ export function createAiRoutes(memory: WorkspaceMemoryService) {
 
         try {
           const suggestion = await callOpenAI(systemPrompt, code, apiKey!)
+          await eventBus.dispatch(
+            'ai.suggestion',
+            workspaceId,
+            { mode: 'complete', language, responseLength: suggestion.length, traceId: req.id },
+            userId
+          )
           return reply.send({ suggestion })
         } catch (err) {
           return reply.status(502).send({ error: (err as Error).message })
@@ -147,6 +144,12 @@ export function createAiRoutes(memory: WorkspaceMemoryService) {
 
         try {
           const explanation = await callOpenAI(systemPrompt, code, apiKey!)
+          await eventBus.dispatch(
+            'ai.suggestion',
+            req.params.workspaceId,
+            { mode: 'explain', language, responseLength: explanation.length, traceId: req.id },
+            userId
+          )
           return reply.send({ explanation })
         } catch (err) {
           return reply.status(502).send({ error: (err as Error).message })
@@ -178,6 +181,12 @@ export function createAiRoutes(memory: WorkspaceMemoryService) {
 
         try {
           const review = await callOpenAI(systemPrompt, code, apiKey!)
+          await eventBus.dispatch(
+            'ai.suggestion',
+            req.params.workspaceId,
+            { mode: 'review', language, responseLength: review.length, traceId: req.id },
+            userId
+          )
           return reply.send({ review })
         } catch (err) {
           return reply.status(502).send({ error: (err as Error).message })
@@ -217,6 +226,12 @@ export function createAiRoutes(memory: WorkspaceMemoryService) {
 
         try {
           const response = await callOpenAI(systemPrompt, message, apiKey!)
+          await eventBus.dispatch(
+            'ai.suggestion',
+            workspaceId,
+            { mode: 'chat', promptLength: message.length, responseLength: response.length, traceId: req.id },
+            userId
+          )
           return reply.send({ response })
         } catch (err) {
           return reply.status(502).send({ error: (err as Error).message })

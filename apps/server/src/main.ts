@@ -24,6 +24,7 @@ import { registerChatRoutes } from './routes/chat'
 import { registerFileRoutes } from './routes/files'
 import { registerGitRoutes } from './routes/git'
 import { registerReplayRoutes } from './routes/replay'
+import { createMemoryRoutes } from './routes/memory'
 import { createAiRoutes } from './routes/ai'
 import { createTaskRoutes } from './routes/tasks'
 import { registerAuditRoutes } from './routes/audit'
@@ -109,10 +110,17 @@ async function bootstrap(): Promise<void> {
 
   app.addHook('onRequest', async (req) => {
     ;(req as Record<string, unknown>)['_startTime'] = Date.now()
+    const incomingTraceParent = req.headers['traceparent']
+    const traceId =
+      typeof incomingTraceParent === 'string' && incomingTraceParent.split('-')[1]
+        ? incomingTraceParent.split('-')[1]
+        : crypto.randomUUID().replace(/-/g, '').slice(0, 32)
+    ;(req as Record<string, unknown>)['_traceId'] = traceId
   })
 
   app.addHook('onResponse', async (req, reply) => {
     const startTime = (req as Record<string, unknown>)['_startTime'] as number | undefined
+    const traceId = (req as Record<string, unknown>)['_traceId'] as string | undefined
     const durationMs = startTime ? Date.now() - startTime : 0
     const route = req.routeOptions?.url ?? req.url ?? 'unknown'
     const method = req.method
@@ -120,6 +128,10 @@ async function bootstrap(): Promise<void> {
 
     httpRequestsTotal.inc({ method, route, status_code: statusCode })
     httpRequestDuration.observe(durationMs, { method, route })
+    if (traceId) {
+      reply.header('x-trace-id', traceId)
+      reply.header('traceparent', `00-${traceId}-0000000000000000-01`)
+    }
   })
 
   // ─── HTTP Routes ─────────────────────────────────────────────────────────
@@ -205,6 +217,7 @@ async function bootstrap(): Promise<void> {
   })
 
   // Register AI routes (needs memory service reference)
+  await app.register(createMemoryRoutes(memory), { prefix: '/api/memory' })
   await app.register(createAiRoutes(memory), { prefix: '/api/ai' })
   await app.register(createTaskRoutes(memory, pubClient), { prefix: '/api/tasks' })
 
@@ -250,8 +263,8 @@ async function bootstrap(): Promise<void> {
   // Register collaboration and runtime event handlers
   setupCollaborationHandlers(io, pubClient, eventBus)
   setupRuntimeHandlers(io, eventBus)
-  setupTerminalHandlers(io)
-  setupDebugHandlers(io)
+  setupTerminalHandlers(io, eventBus)
+  setupDebugHandlers(io, eventBus)
 
   // ─── Start ───────────────────────────────────────────────────────────────
 

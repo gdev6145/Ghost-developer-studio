@@ -23,13 +23,15 @@ import { ReconnectBanner } from '@/components/collaboration/ReconnectBanner'
 import { AuditPanel } from '@/components/audit/AuditPanel'
 import { TaskOrchestratorPanel } from '@/components/tasks/TaskOrchestratorPanel'
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow'
+import { MemoryPanel } from '@/components/memory/MemoryPanel'
+import { ReplayPanel } from '@/components/replay/ReplayPanel'
 import { getCurrentUserId, getCurrentDisplayName, getSessionToken } from '@/lib/session'
 
 interface WorkspacePageProps {
   workspaceId: string
 }
 
-type RightPanelTab = 'members' | 'chat' | 'ai' | 'git' | 'tasks' | 'audit'
+type RightPanelTab = 'members' | 'chat' | 'ai' | 'git' | 'tasks' | 'memory' | 'replay' | 'audit'
 type BottomPanelTab = 'terminal' | 'debug'
 
 /**
@@ -224,6 +226,8 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
     { key: 'ai', label: '✦ AI' },
     { key: 'git', label: '⎇ Git' },
     { key: 'tasks', label: '⚙ Tasks' },
+    { key: 'memory', label: '🧠 Memory' },
+    { key: 'replay', label: '⏱ Replay' },
     { key: 'audit', label: '📋 Audit' },
   ]
 
@@ -294,6 +298,20 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
                 )}
                 {rightTab === 'tasks' && (
                   <TaskOrchestratorPanel
+                    workspaceId={workspaceId}
+                    apiUrl={apiUrl}
+                    token={token ?? ''}
+                  />
+                )}
+                {rightTab === 'memory' && (
+                  <MemoryPanel
+                    workspaceId={workspaceId}
+                    apiUrl={apiUrl}
+                    token={token ?? ''}
+                  />
+                )}
+                {rightTab === 'replay' && (
+                  <ReplayPanel
                     workspaceId={workspaceId}
                     apiUrl={apiUrl}
                     token={token ?? ''}
@@ -397,4 +415,3 @@ async function loadWorkspaceData(
     // Graceful degradation – workspace still works offline
   }
 }
-
