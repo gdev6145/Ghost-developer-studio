@@ -362,6 +362,28 @@ Planned next milestones:
 - **Milestone G — Enterprise scale** — Multi-tenant hardening, horizontal scaling benchmarks, disaster recovery playbooks
 - **Milestone H — Product growth** — Usage analytics, community plugin marketplace, contributor program
 
+Further future improvements:
+
+- **Voice and video collaboration** — embedded audio/video channels tied to workspace rooms, enabling hands-free pair programming without leaving the studio
+- **Integrated CI/CD pipeline editor** — visual pipeline builder with live run status, log streaming, and one-click re-runs linked directly to workspace branches
+- **Code intelligence and LSP support** — project-wide semantic search, go-to-definition, find-all-references, and hover documentation powered by Language Server Protocol
+- **Workspace snapshots and environment forking** — point-in-time workspace snapshots that can be forked for safe experimentation or shared as reproducible bug reports
+- **Multi-cloud runtime targets** — deploy preview containers to AWS ECS, GCP Cloud Run, or Azure Container Apps in addition to local Docker
+- **Dependency and vulnerability scanning** — built-in SBOM generation and CVE scanning surfaced inline as developers add or update packages
+- **Performance profiling integration** — embedded flamegraph, memory heap, and CPU profiler views linked to live running containers for in-context performance tuning
+- **Mobile companion app** — lightweight iOS/Android app for reviewing diffs, approving pull requests, monitoring runtime status, and reading workspace chat on the go
+- **Structured code review workflows** — formal review rounds with inline comment threads, resolution tracking, approval gates, and merge-queue integration
+- **Policy-as-code governance** — repository, runtime, and deployment policies enforced with programmable rules and workspace-level exceptions
+- **Secrets lifecycle management** — encrypted secret storage, automatic rotation workflows, and scoped runtime injection per environment
+- **Cost visibility and controls** — per-workspace spend dashboards, budget alerts, and runtime auto-scaling limits to prevent runaway usage
+- **Live architecture maps** — continuously generated service dependency maps from runtime telemetry and repository metadata
+- **Database collaboration studio** — shared schema explorer, migration assistant, and safe data sandboxing for pair debugging
+- **Test intelligence hub** — flaky test detection, test impact analysis, and smart test selection based on changed files
+- **Release orchestration center** — staged rollout controls, canary analysis, and rollback automation tied to workspace events
+- **Compliance reporting automation** — exportable SOC2/ISO evidence streams from audit logs, reviews, and deployment history
+- **Knowledge graph for codebase context** — cross-link issues, pull requests, docs, and runtime events into searchable team context
+- **Offline-first desktop mode** — local-first editing and queue-based sync so contributors can continue work without connectivity
+
 ---
 
 ## License
