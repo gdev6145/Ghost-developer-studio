@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 
 type TaskStatus = 'running' | 'awaiting_approval' | 'completed' | 'cancelled' | 'failed'
 type StepStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'skipped'
@@ -61,7 +61,10 @@ export function TaskOrchestratorPanel({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+  const headers = useMemo(
+    () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
+    [token]
+  )
 
   const startTask = useCallback(async () => {
     if (!goal.trim()) return
@@ -227,7 +230,7 @@ export function TaskOrchestratorPanel({
                 >
                   <span className="shrink-0 text-sm">{STEP_ICONS[step.status]}</span>
                   <div className="flex-1">
-                    <span className="text-zinc-400 mr-1">{idx + 1}.</span>
+                    <span className="mr-1 text-zinc-400">{idx + 1}.</span>
                     <span className="text-zinc-200">{step.description}</span>
                   </div>
                   <span className="shrink-0 text-zinc-600">{step.status}</span>

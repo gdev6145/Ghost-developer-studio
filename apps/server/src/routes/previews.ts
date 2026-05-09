@@ -37,6 +37,9 @@ export interface PreviewEnvironment {
 const PREVIEW_BASE_DOMAIN =
   process.env['PREVIEW_BASE_DOMAIN'] ?? 'preview.ghostdev.studio'
 
+/** TTL before an idle preview auto-sleeps (30 minutes) */
+const SLEEP_TTL_MS = 30 * 60 * 1000
+
 // In-memory store (production: PostgreSQL + container orchestrator)
 const previews = new Map<string, PreviewEnvironment>()
 
