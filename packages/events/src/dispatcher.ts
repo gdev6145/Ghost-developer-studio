@@ -71,7 +71,7 @@ export class EventDispatcher {
       id: generateId(),
       type,
       workspaceId,
-      actorId,
+      ...(actorId !== undefined ? { actorId } : {}),
       timestamp: now(),
       payload,
     }

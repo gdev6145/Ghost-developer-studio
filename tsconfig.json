@@ -14,9 +14,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
+    "types": ["node"],
     "skipLibCheck": true,
-    "composite": true,
-    "incremental": true
+    "composite": false,
+    "incremental": false
   },
   "exclude": ["node_modules", "dist", "build"]
 }
