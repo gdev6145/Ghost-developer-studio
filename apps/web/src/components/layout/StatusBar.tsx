@@ -6,10 +6,19 @@ import { usePresenceStore } from '@ghost/state'
 import { useRuntimeStore } from '@ghost/state'
 import { RuntimeBadge } from '@ghost/ui'
 import { AvatarGroup } from '@ghost/ui'
+import type { ConnectionState } from '@ghost/collaboration'
 
 interface StatusBarProps {
   workspaceId: string
   collab: React.MutableRefObject<unknown>
+  connectionState?: ConnectionState
+}
+
+const CONNECTION_DOT: Record<ConnectionState, { color: string; label: string }> = {
+  connected:    { color: 'bg-green-500',  label: 'Connected' },
+  connecting:   { color: 'bg-amber-400 animate-pulse', label: 'Connecting…' },
+  reconnecting: { color: 'bg-amber-500 animate-pulse', label: 'Reconnecting…' },
+  disconnected: { color: 'bg-red-500',    label: 'Disconnected' },
 }
 
 /**
@@ -18,9 +27,9 @@ interface StatusBarProps {
  * - Active branch
  * - Runtime status
  * - Online collaborators
- * - Connection status
+ * - Connection status indicator
  */
-export function StatusBar({ workspaceId }: StatusBarProps) {
+export function StatusBar({ workspaceId, connectionState = 'connected' }: StatusBarProps) {
   const workspace = useWorkspaceStore(s => s.workspace)
   const activeBranch = useWorkspaceStore(s => s.activeBranch)
   const status = useRuntimeStore(s => s.status)
@@ -34,6 +43,8 @@ export function StatusBar({ workspaceId }: StatusBarProps) {
       color: p?.color ?? '#6B7280',
     }
   })
+
+  const connInfo = CONNECTION_DOT[connectionState]
 
   return (
     <div className="h-9 flex items-center px-3 gap-4 bg-ghost-surface border-b border-ghost-overlay shrink-0 text-xs text-ghost-muted">
@@ -67,6 +78,20 @@ export function StatusBar({ workspaceId }: StatusBarProps) {
           <span className="text-ghost-muted">{onlineAvatars.length} online</span>
         </div>
       )}
+
+      <span className="text-ghost-overlay">|</span>
+
+      {/* Connection status dot */}
+      <div
+        className="flex items-center gap-1.5"
+        title={connInfo.label}
+        aria-label={connInfo.label}
+      >
+        <span className={`h-2 w-2 rounded-full shrink-0 ${connInfo.color}`} />
+        {connectionState !== 'connected' && (
+          <span className="text-[10px] opacity-70">{connInfo.label}</span>
+        )}
+      </div>
 
       <span className="text-ghost-overlay">|</span>
 

@@ -1,0 +1,20 @@
+{
+  "name": "@ghost/observability",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ghost Developer Studio — observability: metrics, tracing, and structured log helpers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.5"
+  }
+}

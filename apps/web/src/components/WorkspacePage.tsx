@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
-import { CollaborationClient } from '@ghost/collaboration'
+import { CollaborationClient, type ConnectionState } from '@ghost/collaboration'
 import { useWorkspaceStore } from '@ghost/state'
 import { usePresenceStore } from '@ghost/state'
 import { useChatStore } from '@ghost/state'
@@ -19,13 +19,17 @@ import { TerminalPanel } from '@/components/terminal/TerminalPanel'
 import { DebugPanel } from '@/components/debug/DebugPanel'
 import { BranchPanel } from '@/components/git/BranchPanel'
 import { AIPairPanel } from '@/components/ai/AIPairPanel'
+import { ReconnectBanner } from '@/components/collaboration/ReconnectBanner'
+import { AuditPanel } from '@/components/audit/AuditPanel'
+import { TaskOrchestratorPanel } from '@/components/tasks/TaskOrchestratorPanel'
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow'
 import { getCurrentUserId, getCurrentDisplayName, getSessionToken } from '@/lib/session'
 
 interface WorkspacePageProps {
   workspaceId: string
 }
 
-type RightPanelTab = 'members' | 'chat' | 'ai' | 'git'
+type RightPanelTab = 'members' | 'chat' | 'ai' | 'git' | 'tasks' | 'audit'
 type BottomPanelTab = 'terminal' | 'debug'
 
 /**
@@ -37,7 +41,8 @@ type BottomPanelTab = 'terminal' | 'debug'
  * ├──────────┬────────────────────────┬─────────────────┤
  * │ Explorer │   Editor + Preview     │  Right Panel    │
  * │          │                        │  (Members/Chat/ │
- * │          │                        │   AI/Git)       │
+ * │          │                        │   AI/Git/Tasks/ │
+ * │          │                        │   Audit)        │
  * ├──────────┴────────────────────────┴─────────────────┤
  * │  Bottom Panel (Terminal / Debug)                    │
  * └─────────────────────────────────────────────────────┘
@@ -49,6 +54,13 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
   const [rightTab, setRightTab] = useState<RightPanelTab>('chat')
   const [bottomTab, setBottomTab] = useState<BottomPanelTab>('terminal')
   const [showBottom, setShowBottom] = useState(false)
+  const [connectionState, setConnectionState] = useState<ConnectionState>('connecting')
+  const [reconnectAttempt, setReconnectAttempt] = useState(0)
+  // Show onboarding for first visit (tracked in localStorage per workspace)
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !localStorage.getItem(`ghost:onboarded:${workspaceId}`)
+  })
 
   const setWorkspace = useWorkspaceStore(s => s.setWorkspace)
   const setFiles = useWorkspaceStore(s => s.setFiles)
@@ -79,9 +91,8 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
     const socket = io(wsUrl, {
       auth: { token },
       transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 10_000,
+      // Let CollaborationClient manage reconnection via exponential backoff
+      reconnection: false,
     })
     socketRef.current = socket
 
@@ -92,6 +103,16 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       socket,
     })
     collabRef.current = collab
+
+    // ─── Connection state tracking ─────────────────────────────────────────
+    collab.on('connection:state', state => {
+      setConnectionState(state)
+      if (state === 'reconnecting') {
+        setReconnectAttempt(a => a + 1)
+      } else if (state === 'connected') {
+        setReconnectAttempt(0)
+      }
+    })
 
     // Wire collaboration events to Zustand stores
     collab.on('member:joined', payload => {
@@ -164,7 +185,6 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       if (payload.url) setPreviewUrl(payload.url)
     })
 
-    // Terminal events
     collab.on('terminal:output', payload => {
       appendTerminalOutput(payload.terminalId, payload.data)
     })
@@ -173,30 +193,38 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       closeTerminalSession(payload.terminalId, payload.exitCode)
     })
 
-    // Debug events
     collab.on('debug:state', payload => {
       setDebugBreakpoints(payload.breakpoints)
     })
 
-    // Connect
     socket.on('connect', () => {
+      setConnectionState('connected')
       collab.joinWorkspace(getCurrentDisplayName())
     })
 
-    // Load workspace data
     void loadWorkspaceData(workspaceId, setWorkspace, setFiles, setMessages)
 
     return () => {
       collab.destroy()
       socket.disconnect()
     }
-  }, [workspaceId])
+  }, [workspaceId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'
+  const token = getSessionToken()
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem(`ghost:onboarded:${workspaceId}`, '1')
+    setShowOnboarding(false)
+  }
 
   const rightTabs: { key: RightPanelTab; label: string }[] = [
     { key: 'members', label: 'Members' },
     { key: 'chat', label: 'Chat' },
     { key: 'ai', label: '✦ AI' },
     { key: 'git', label: '⎇ Git' },
+    { key: 'tasks', label: '⚙ Tasks' },
+    { key: 'audit', label: '📋 Audit' },
   ]
 
   const bottomTabs: { key: BottomPanelTab; label: string }[] = [
@@ -206,7 +234,27 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
 
   return (
     <div className="flex flex-col h-screen bg-ghost-bg text-ghost-text overflow-hidden">
-      <StatusBar workspaceId={workspaceId} collab={collabRef} />
+      {/* First-time onboarding wizard */}
+      {showOnboarding && (
+        <OnboardingFlow
+          workspaceId={workspaceId}
+          apiUrl={apiUrl}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+
+      {/* Reconnect banner — floats above layout when degraded */}
+      <ReconnectBanner
+        connectionState={connectionState}
+        reconnectAttempt={reconnectAttempt}
+        maxAttempts={10}
+      />
+
+      <StatusBar
+        workspaceId={workspaceId}
+        collab={collabRef}
+        connectionState={connectionState}
+      />
 
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Main workspace area */}
@@ -216,13 +264,13 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
           rightPanel={
             <div className="flex flex-col h-full">
               {/* Right panel tabs */}
-              <div className="flex items-center h-8 border-b border-ghost-overlay shrink-0 bg-ghost-surface">
+              <div className="flex items-center h-8 border-b border-ghost-overlay shrink-0 bg-ghost-surface overflow-x-auto">
                 {rightTabs.map(tab => (
                   <button
                     key={tab.key}
                     onClick={() => setRightTab(tab.key)}
                     className={[
-                      'px-3 h-full text-[10px] font-semibold transition-colors border-r border-ghost-overlay',
+                      'px-3 h-full text-[10px] font-semibold transition-colors border-r border-ghost-overlay whitespace-nowrap',
                       rightTab === tab.key
                         ? 'text-ghost-text bg-ghost-bg'
                         : 'text-ghost-muted hover:text-ghost-text hover:bg-ghost-overlay',
@@ -243,6 +291,20 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
                 )}
                 {rightTab === 'git' && (
                   <BranchPanel workspaceId={workspaceId} collab={collabRef} />
+                )}
+                {rightTab === 'tasks' && (
+                  <TaskOrchestratorPanel
+                    workspaceId={workspaceId}
+                    apiUrl={apiUrl}
+                    token={token ?? ''}
+                  />
+                )}
+                {rightTab === 'audit' && (
+                  <AuditPanel
+                    workspaceId={workspaceId}
+                    apiUrl={apiUrl}
+                    token={token ?? ''}
+                  />
                 )}
               </div>
             </div>
@@ -335,3 +397,4 @@ async function loadWorkspaceData(
     // Graceful degradation – workspace still works offline
   }
 }
+

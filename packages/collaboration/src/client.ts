@@ -48,6 +48,7 @@ export type CollabEventMap = {
   'terminal:closed': (payload: WsTerminalClosed['payload']) => void
   'debug:state': (payload: WsDebugState['payload']) => void
   'ai:suggestion': (payload: WsAiSuggestion['payload']) => void
+  'connection:state': (state: ConnectionState) => void
   reconnect: () => void
   disconnect: () => void
 }
@@ -71,6 +72,8 @@ type EventHandler<K extends keyof CollabEventMap> = CollabEventMap[K]
  *       → Socket.IO
  *         → Server collaboration handler
  */
+export type ConnectionState = 'connected' | 'connecting' | 'reconnecting' | 'disconnected'
+
 export class CollaborationClient {
   public readonly documents: DocumentManager
   public readonly awareness: AwarenessManager
@@ -80,16 +83,23 @@ export class CollaborationClient {
   private readonly workspaceId: string
   private readonly userId: string
   private readonly actorId: string
+  private displayName = ''
 
   private readonly listeners = new Map<string, Set<(...args: unknown[]) => void>>()
   private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
+  private maxReconnectAttempts = 10
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private _connectionState: ConnectionState = 'connecting'
+
+  /** Ops emitted while offline — flushed on reconnect */
+  private pendingOps: Array<Record<string, unknown>> = []
 
   constructor(options: CollabClientOptions) {
     this.socket = options.socket
     this.workspaceId = options.workspaceId
     this.userId = options.userId
     this.actorId = options.userId
+    this.displayName = options.displayName
 
     this.documents = new DocumentManager()
     this.awareness = new AwarenessManager(options.userId, options.displayName)
@@ -100,6 +110,11 @@ export class CollaborationClient {
     })
 
     this.attachSocketListeners()
+  }
+
+  /** Current connection state */
+  get connectionState(): ConnectionState {
+    return this._connectionState
   }
 
   // ─── Public API ───────────────────────────────────────────────────────────
@@ -205,6 +220,7 @@ export class CollaborationClient {
 
   /**
    * Send a Yjs document update (called by Monaco binding on change).
+   * Ops are queued if the socket is not currently connected and flushed on reconnect.
    */
   sendDocumentUpdate(fileId: string, updateBase64: string): void {
     const msg: WsDocumentUpdate = {
@@ -213,6 +229,10 @@ export class CollaborationClient {
       actorId: this.actorId,
       timestamp: new Date().toISOString(),
       payload: { fileId, update: updateBase64 },
+    }
+    if (!this.socket.connected) {
+      this.pendingOps.push(msg as unknown as Record<string, unknown>)
+      return
     }
     this.socket.emit('message', msg)
   }
@@ -247,13 +267,62 @@ export class CollaborationClient {
 
     this.socket.on('connect', () => {
       this.reconnectAttempts = 0
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer)
+        this.reconnectTimer = null
+      }
+      this.setConnectionState('connected')
+      this.flushPendingOps()
+      // Re-join workspace after reconnect to restore room membership
+      this.joinWorkspace(this.displayName)
       this.emit('reconnect')
     })
 
-    this.socket.on('disconnect', () => {
+    this.socket.on('disconnect', (reason: string) => {
       this.awareness.setOffline()
+      this.setConnectionState('disconnected')
       this.emit('disconnect')
+
+      // Socket.IO handles its own reconnect for transport errors;
+      // for server-initiated disconnects we schedule a manual reconnect.
+      if (reason === 'io server disconnect') {
+        this.scheduleReconnect()
+      }
     })
+
+    this.socket.on('connect_error', () => {
+      this.setConnectionState('reconnecting')
+      this.scheduleReconnect()
+    })
+  }
+
+  private setConnectionState(state: ConnectionState): void {
+    if (this._connectionState !== state) {
+      this._connectionState = state
+      this.emit('connection:state', state)
+    }
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) return
+    if (this.reconnectTimer) return
+
+    const backoffMs = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30_000)
+    this.reconnectAttempts++
+    this.setConnectionState('reconnecting')
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null
+      this.socket.connect()
+    }, backoffMs)
+  }
+
+  /** Flush queued ops accumulated during disconnection. */
+  private flushPendingOps(): void {
+    const ops = this.pendingOps.splice(0)
+    for (const op of ops) {
+      this.socket.emit('message', op)
+    }
   }
 
   private handleMessage(msg: Record<string, unknown>): void {
@@ -355,6 +424,10 @@ export class CollaborationClient {
   // ─── Cleanup ──────────────────────────────────────────────────────────────
 
   destroy(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     this.leaveWorkspace()
     this.documents.destroyAll()
     this.awareness.destroy()

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
+    "@fastify/rate-limit": "^9.1.0",
     "@ghost/auth": "workspace:*",
     "@ghost/config": "workspace:*",
     "@ghost/database": "workspace:*",
@@ -22,6 +23,8 @@
     "@ghost/git": "workspace:*",
     "@ghost/protocol": "workspace:*",
     "@ghost/runtime": "workspace:*",
+    "@ghost/observability": "workspace:*",
+    "@ghost/plugins": "workspace:*",
     "@ghost/shared": "workspace:*",
     "@socket.io/redis-adapter": "^8.3.0",
     "bcrypt": "^5.1.1",
