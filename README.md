@@ -295,6 +295,16 @@ Planned next milestones for Ghost Developer Studio:
 - **Mobile companion app** — lightweight iOS/Android app for reviewing diffs, approving pull requests, monitoring runtime status, and reading workspace chat on the go
 - **Structured code review workflows** — formal review rounds with inline comment threads, resolution tracking, approval gates, and merge-queue integration
 - **Workspace templates and starter kits** — curated project templates that spin up fully configured environments (language, framework, toolchain, Docker services) in one click
+- **Policy-as-code governance** — repository, runtime, and deployment policies enforced with programmable rules and workspace-level exceptions
+- **Secrets lifecycle management** — encrypted secret storage, automatic rotation workflows, and scoped runtime injection per environment
+- **Cost visibility and controls** — per-workspace spend dashboards, budget alerts, and runtime auto-scaling limits to prevent runaway usage
+- **Live architecture maps** — continuously generated service dependency maps from runtime telemetry and repository metadata
+- **Database collaboration studio** — shared schema explorer, migration assistant, and safe data sandboxing for pair debugging
+- **Test intelligence hub** — flaky test detection, test impact analysis, and smart test selection based on changed files
+- **Release orchestration center** — staged rollout controls, canary analysis, and rollback automation tied to workspace events
+- **Compliance reporting automation** — exportable SOC2/ISO evidence streams from audit logs, reviews, and deployment history
+- **Knowledge graph for codebase context** — cross-link issues, pull requests, docs, and runtime events into searchable team context
+- **Offline-first desktop mode** — local-first editing and queue-based sync so contributors can continue work without connectivity
 
 ---
 
