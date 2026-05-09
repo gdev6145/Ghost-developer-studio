@@ -52,7 +52,10 @@ export function createMemoryRoutes(memory: WorkspaceMemoryService) {
         }
 
         const limit = Math.min(Number(req.query.limit ?? 50), 200)
-        const entries = await memory.getKnowledge(workspaceId, { category, limit })
+        const entries = await memory.getKnowledge(workspaceId, {
+          limit,
+          ...(category ? { category } : {}),
+        })
         return reply.send({ entries, policy: memory.getPolicy() })
       }
     )
@@ -91,9 +94,9 @@ export function createMemoryRoutes(memory: WorkspaceMemoryService) {
           category,
           title: title.trim(),
           detail: detail.trim(),
-          tags,
-          relatedEntity,
-          severity,
+          ...(tags ? { tags } : {}),
+          ...(relatedEntity ? { relatedEntity } : {}),
+          ...(severity ? { severity } : {}),
         })
 
         return reply.status(201).send(created)

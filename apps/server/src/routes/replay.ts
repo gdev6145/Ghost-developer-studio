@@ -330,9 +330,6 @@ export async function registerReplayRoutes(app: FastifyInstance): Promise<void> 
       }
 
       const { workspaceId } = req.params
-      if (!(await requireWorkspaceMembership(workspaceId, userId))) {
-        return reply.status(403).send({ error: 'Access denied' })
-      }
       const { id, type, actorId, payload, timestamp } = req.body
 
       const event = await db.event.create({

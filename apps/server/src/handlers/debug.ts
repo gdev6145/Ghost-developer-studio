@@ -85,7 +85,7 @@ function handleDebugMessage(
         fileId: payload['fileId'] as string,
         path: payload['path'] as string,
         line: payload['line'] as number,
-        condition: payload['condition'] as string | undefined,
+        ...(payload['condition'] ? { condition: payload['condition'] as string } : {}),
       }
       getBreakpoints(workspaceId).set(breakpointId, bp)
       broadcastDebugState(workspaceId, io)
