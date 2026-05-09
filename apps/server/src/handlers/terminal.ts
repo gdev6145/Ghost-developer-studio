@@ -71,13 +71,17 @@ async function handleTerminalMessage(
           cwd: process.cwd(),
           env: process.env as Record<string, string>,
         })
-      } catch {
+      } catch (err) {
         socket.emit('message', {
           type: 'terminal.closed',
           workspaceId,
           actorId: 'server',
           timestamp: now(),
-          payload: { terminalId, exitCode: -1 },
+          payload: {
+            terminalId,
+            exitCode: -1,
+            error: `Failed to spawn terminal: ${(err as Error).message}. Ensure node-pty is installed and compiled.`,
+          },
         })
         break
       }

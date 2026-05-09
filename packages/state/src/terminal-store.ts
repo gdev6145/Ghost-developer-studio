@@ -64,9 +64,12 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     set(state => {
       const next = new Map(state.sessions)
       next.delete(terminalId)
-      const active = state.activeTerminalId === terminalId
-        ? (next.size > 0 ? [...next.keys()][0]! : null)
-        : state.activeTerminalId
+
+      let active = state.activeTerminalId
+      if (active === terminalId) {
+        active = next.size > 0 ? ([...next.keys()][0] ?? null) : null
+      }
+
       return { sessions: next, activeTerminalId: active }
     })
   },

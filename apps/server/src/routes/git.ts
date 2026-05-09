@@ -22,6 +22,9 @@ import { GitService } from '@ghost/git'
 
 const git = new GitService(eventBus)
 
+const DEFAULT_GIT_LOG_LIMIT = 50
+const MAX_GIT_LOG_LIMIT = 200
+
 function getUserId(req: FastifyRequest): string | null {
   const token = req.headers.authorization?.replace('Bearer ', '')
   if (!token) return null
@@ -108,7 +111,7 @@ export async function registerGitRoutes(app: FastifyInstance): Promise<void> {
       const { repoPath } = req.query
       if (!repoPath) return reply.status(400).send({ error: 'repoPath is required' })
 
-      const limit = Math.min(parseInt(req.query.limit ?? '50', 10), 200)
+      const limit = Math.min(parseInt(req.query.limit ?? String(DEFAULT_GIT_LOG_LIMIT), 10), MAX_GIT_LOG_LIMIT)
 
       try {
         const { simpleGit } = await import('simple-git')

@@ -29,6 +29,9 @@ function getUserId(req: FastifyRequest): string | null {
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
 const DEFAULT_MODEL = 'gpt-4o-mini'
+const AI_CONTEXT_MAX_EVENTS = 10
+const AI_CHAT_CONTEXT_MAX_EVENTS = 20
+const AI_PAYLOAD_SUMMARY_MAX_LEN = 80
 
 async function callOpenAI(
   systemPrompt: string,
@@ -65,7 +68,7 @@ async function callOpenAI(
 
 function buildContextSummary(events: Array<{ type: string; payload: unknown }>): string {
   if (events.length === 0) return 'No recent workspace activity.'
-  const lines = events.slice(-10).map(e => `- [${e.type}] ${JSON.stringify(e.payload).slice(0, 80)}`)
+  const lines = events.slice(-AI_CONTEXT_MAX_EVENTS).map(e => `- [${e.type}] ${JSON.stringify(e.payload).slice(0, AI_PAYLOAD_SUMMARY_MAX_LEN)}`)
   return `Recent workspace activity:\n${lines.join('\n')}`
 }
 
@@ -102,7 +105,7 @@ export function createAiRoutes(memory: WorkspaceMemoryService) {
         const { workspaceId } = req.params
         const { code, language } = req.body
 
-        const context = await memory.getContext(workspaceId, 10)
+        const context = await memory.getContext(workspaceId, AI_CONTEXT_MAX_EVENTS)
         const contextSummary = buildContextSummary(context)
 
         const systemPrompt = [
@@ -203,7 +206,7 @@ export function createAiRoutes(memory: WorkspaceMemoryService) {
         const { workspaceId } = req.params
         const { message } = req.body
 
-        const context = await memory.getContext(workspaceId, 20)
+        const context = await memory.getContext(workspaceId, AI_CHAT_CONTEXT_MAX_EVENTS)
         const contextSummary = buildContextSummary(context)
 
         const systemPrompt = [

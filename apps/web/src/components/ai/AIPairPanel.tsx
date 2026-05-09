@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import type { CollaborationClient } from '@ghost/collaboration'
 import { useEditorStore } from '@ghost/state'
+import { generateId } from '@ghost/shared'
 import { getSessionToken } from '@/lib/session'
 
 interface AIPairPanelProps {
@@ -54,7 +55,7 @@ export function AIPairPanel({ workspaceId, collab }: AIPairPanelProps) {
     setMessages(prev => [
       ...prev,
       {
-        id: Math.random().toString(36).slice(2),
+        id: generateId(),
         role,
         content,
         timestamp: new Date().toISOString(),

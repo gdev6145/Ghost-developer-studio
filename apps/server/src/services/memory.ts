@@ -13,7 +13,8 @@ import type { GhostEvent } from '@ghost/protocol'
  * the model awareness of recent workspace activity (file edits, chat, etc.).
  */
 
-const MEMORY_WINDOW = 100  // maximum events retained per workspace
+/** Maximum events retained per workspace in the rolling window */
+const MAX_MEMORY_WINDOW_EVENTS = 100
 const MEMORY_TTL_SECONDS = 86_400  // 24 hours
 
 function redisKey(workspaceId: string): string {
@@ -35,7 +36,7 @@ export class WorkspaceMemoryService {
     const pipeline = this.redis.pipeline()
     pipeline.zadd(key, score, value)
     // Keep only the newest MEMORY_WINDOW entries
-    pipeline.zremrangebyrank(key, 0, -(MEMORY_WINDOW + 1))
+    pipeline.zremrangebyrank(key, 0, -(MAX_MEMORY_WINDOW_EVENTS + 1))
     pipeline.expire(key, MEMORY_TTL_SECONDS)
     await pipeline.exec()
   }

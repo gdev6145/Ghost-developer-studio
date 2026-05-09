@@ -86,7 +86,9 @@ async function bootstrap(): Promise<void> {
         payload: event.payload as Record<string, unknown>,
         timestamp: new Date(event.timestamp),
       },
-    }).catch(() => { /* non-fatal */ })
+    }).catch(err => {
+      app.log.error({ err, eventId: event.id }, 'Failed to persist event to database')
+    })
   })
 
   // Register AI routes (needs memory service reference)

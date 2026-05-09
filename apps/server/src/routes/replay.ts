@@ -128,9 +128,9 @@ export async function registerReplayRoutes(app: FastifyInstance): Promise<void> 
       }>,
       reply: FastifyReply
     ) => {
-      // Internal-only: require a server-side header
+      // Internal-only: require a server-side header in all environments
       const secret = req.headers['x-internal-secret']
-      if (secret !== process.env['INTERNAL_SECRET'] && process.env['NODE_ENV'] === 'production') {
+      if (!process.env['INTERNAL_SECRET'] || secret !== process.env['INTERNAL_SECRET']) {
         return reply.status(403).send({ error: 'Forbidden' })
       }
 
