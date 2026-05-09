@@ -42,9 +42,9 @@ export function BranchPanel({ workspaceId, repoPath }: BranchPanelProps) {
     try {
       const params = new URLSearchParams({ repoPath })
       const [branchesRes, statusRes, logRes] = await Promise.all([
-        fetch(`${apiUrl}/api/git/${workspaceId}/branches?${params}`, { headers }),
-        fetch(`${apiUrl}/api/git/${workspaceId}/status?${params}`, { headers }),
-        fetch(`${apiUrl}/api/git/${workspaceId}/log?${params}&limit=30`, { headers }),
+        fetch(`${apiUrl}/api/git/${workspaceId}/branches?${params.toString()}`, { headers }),
+        fetch(`${apiUrl}/api/git/${workspaceId}/status?${params.toString()}`, { headers }),
+        fetch(`${apiUrl}/api/git/${workspaceId}/log?${params.toString()}&limit=30`, { headers }),
       ])
 
       if (branchesRes.ok) {
@@ -67,6 +67,7 @@ export function BranchPanel({ workspaceId, repoPath }: BranchPanelProps) {
           date: string
           message: string
           author_name: string
+          author_email: string
           refs: string
         }> }
         setCommits(data.commits)
@@ -205,17 +206,17 @@ function BranchList({
 }: {
   branches: string[]
   currentBranch: string
-  onSwitch: (branch: string) => void
+  onSwitch: (branch: string) => Promise<void>
   newBranchName: string
   onNewBranchChange: (v: string) => void
-  onCreateBranch: () => void
+  onCreateBranch: () => Promise<void>
 }) {
   return (
     <div className="py-1">
       {branches.map(branch => (
         <button
           key={branch}
-          onClick={() => onSwitch(branch)}
+          onClick={() => void onSwitch(branch)}
           className={[
             'w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-ghost-overlay',
             branch === currentBranch ? 'text-ghost-text' : 'text-ghost-muted',
@@ -246,11 +247,11 @@ function BranchList({
             placeholder="feature/my-branch"
             value={newBranchName}
             onChange={e => onNewBranchChange(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && onCreateBranch()}
+            onKeyDown={e => e.key === 'Enter' && void onCreateBranch()}
             className="flex-1 bg-ghost-overlay text-xs text-ghost-text placeholder-ghost-muted px-2 py-1 rounded outline-none focus:ring-1 focus:ring-ghost-blue"
           />
           <button
-            onClick={onCreateBranch}
+            onClick={() => void onCreateBranch()}
             disabled={!newBranchName.trim()}
             className="px-2 py-1 bg-ghost-blue text-ghost-bg text-xs font-semibold rounded disabled:opacity-40 hover:opacity-90 transition-opacity"
           >

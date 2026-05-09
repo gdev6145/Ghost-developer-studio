@@ -9,6 +9,7 @@ import { useChatStore } from '@ghost/state'
 import { useRuntimeStore } from '@ghost/state'
 import { useTerminalStore } from '@ghost/state'
 import { useDebugStore } from '@ghost/state'
+import type { ChatMessage, FileNode, Workspace } from '@ghost/protocol'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
 import { FileExplorer } from '@/components/files/FileExplorer'
 import { EditorPane } from '@/components/editor/EditorPane'
@@ -208,7 +209,7 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       collab.destroy()
       socket.disconnect()
     }
-  }, [workspaceId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [workspaceId])
 
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'
   const token = getSessionToken()
@@ -366,9 +367,9 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
 
 async function loadWorkspaceData(
   workspaceId: string,
-  setWorkspace: (w: Parameters<typeof setWorkspace>[0]) => void,
-  setFiles: (f: Parameters<typeof setFiles>[0]) => void,
-  setMessages: (m: Parameters<typeof setMessages>[0]) => void
+  setWorkspace: (workspace: Workspace | null) => void,
+  setFiles: (files: FileNode[]) => void,
+  setMessages: (messages: ChatMessage[]) => void
 ): Promise<void> {
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'
   const token = getSessionToken()
@@ -382,19 +383,18 @@ async function loadWorkspaceData(
     ])
 
     if (workspaceRes.ok) {
-      const ws = await workspaceRes.json() as Parameters<typeof setWorkspace>[0]
+      const ws = await workspaceRes.json() as Workspace
       setWorkspace(ws)
     }
     if (filesRes.ok) {
-      const files = await filesRes.json() as Parameters<typeof setFiles>[0]
+      const files = await filesRes.json() as FileNode[]
       setFiles(files)
     }
     if (chatRes.ok) {
-      const messages = await chatRes.json() as Parameters<typeof setMessages>[0]
+      const messages = await chatRes.json() as ChatMessage[]
       setMessages(messages)
     }
   } catch {
     // Graceful degradation – workspace still works offline
   }
 }
-

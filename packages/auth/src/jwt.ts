@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken'
-import type { User } from '@ghost/protocol'
 
 // ─── JWT Token Payload ───────────────────────────────────────────────────────
 
@@ -18,7 +17,7 @@ export interface JwtPayload {
  * The caller is responsible for passing the secret from env config.
  */
 export function signToken(
-  user: Pick<User, 'id' | 'email' | 'username'>,
+  user: AuthUser,
   secret: string,
   expiresIn = '7d'
 ): string {
@@ -89,4 +88,9 @@ function parseCookies(cookieHeader: string): Record<string, string> {
       return [k?.trim() ?? '', rest.join('=').trim()]
     })
   )
+}
+interface AuthUser {
+  id: string
+  email: string
+  username: string
 }

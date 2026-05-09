@@ -1,6 +1,15 @@
-import type { GhostEvent, GhostEventType } from '@ghost/protocol'
+export interface EventEnvelope {
+  id: string
+  type: string
+  workspaceId: string
+  actorId?: string
+  timestamp: string
+  payload: Record<string, unknown>
+}
 
-type EventHandler<T extends GhostEvent = GhostEvent> = (event: T) => void | Promise<void>
+export type EventType = string
+
+type EventHandler<T extends EventEnvelope = EventEnvelope> = (event: T) => void | Promise<void>
 
 /**
  * Internal event dispatcher (typed pub/sub).
@@ -17,14 +26,14 @@ type EventHandler<T extends GhostEvent = GhostEvent> = (event: T) => void | Prom
  *   → other server instances subscribe & re-emit locally
  */
 export class EventDispatcher {
-  private readonly handlers = new Map<GhostEventType, Set<EventHandler>>()
+  private readonly handlers = new Map<EventType, Set<EventHandler>>()
   private readonly wildcardHandlers = new Set<EventHandler>()
 
   /**
    * Subscribe to a specific event type.
    * Returns an unsubscribe function.
    */
-  on<T extends GhostEvent>(type: GhostEventType, handler: EventHandler<T>): () => void {
+  on<T extends EventEnvelope>(type: EventType, handler: EventHandler<T>): () => void {
     if (!this.handlers.has(type)) {
       this.handlers.set(type, new Set())
     }
@@ -44,16 +53,15 @@ export class EventDispatcher {
   /**
    * Remove a specific handler.
    */
-  off(type: GhostEventType, handler: EventHandler): void {
+  off(type: EventType, handler: EventHandler): void {
     this.handlers.get(type)?.delete(handler)
   }
 
   /**
    * Emit an event. Handlers are called in parallel.
    */
-  async emit(event: GhostEvent): Promise<void> {
-    const eventType = (event as GhostEvent & { type: GhostEventType }).type
-    const handlers = this.handlers.get(eventType) ?? new Set()
+  async emit(event: EventEnvelope): Promise<void> {
+    const handlers = this.handlers.get(event.type) ?? new Set()
     const all = [...handlers, ...this.wildcardHandlers]
     await Promise.allSettled(all.map(h => h(event)))
   }
@@ -62,12 +70,12 @@ export class EventDispatcher {
    * Convenience method: create and emit a typed event.
    */
   async dispatch(
-    type: GhostEventType,
+    type: EventType,
     workspaceId: string,
     payload: Record<string, unknown>,
     actorId?: string
-  ): Promise<GhostEvent> {
-    const event: GhostEvent = {
+  ): Promise<EventEnvelope> {
+    const event: EventEnvelope = {
       id: crypto.randomUUID(),
       type,
       workspaceId,

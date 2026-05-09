@@ -43,7 +43,7 @@ const initialState = {
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
-  subscribeWithSelector((set, get) => ({
+  subscribeWithSelector((set, _get) => ({
     ...initialState,
 
     setWorkspace: workspace => set({ workspace }),

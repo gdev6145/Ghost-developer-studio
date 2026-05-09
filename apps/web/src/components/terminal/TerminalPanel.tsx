@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useEffect, useRef, useCallback } from 'react'
+import React, { useEffect, useRef } from 'react'
+import type { FitAddon } from '@xterm/addon-fit'
+import type { Terminal as XTermTerminal } from '@xterm/xterm'
 import type { CollaborationClient } from '@ghost/collaboration'
 import { useTerminalStore } from '@ghost/state'
 import { generateId } from '@ghost/shared'
@@ -31,8 +33,8 @@ export function TerminalPanel({ workspaceId, collab }: TerminalPanelProps) {
   const removeSession = useTerminalStore(s => s.removeSession)
 
   const terminalRef = useRef<HTMLDivElement>(null)
-  const xtermRef = useRef<import('@xterm/xterm').Terminal | null>(null)
-  const fitAddonRef = useRef<import('@xterm/addon-fit').FitAddon | null>(null)
+  const xtermRef = useRef<XTermTerminal | null>(null)
+  const fitAddonRef = useRef<FitAddon | null>(null)
 
   // Mount xterm when active terminal changes
   useEffect(() => {

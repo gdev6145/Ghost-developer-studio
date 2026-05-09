@@ -39,5 +39,10 @@
       "prettier --write"
     ]
   },
+  "pnpm": {
+    "overrides": {
+      "typescript": "5.5.4"
+    }
+  },
   "packageManager": "pnpm@9.1.0"
 }

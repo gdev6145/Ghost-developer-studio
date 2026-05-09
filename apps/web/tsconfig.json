@@ -19,7 +19,8 @@
     },
     "allowJs": true,
     "noEmit": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "exactOptionalPropertyTypes": false
   },
   "include": [
     "next-env.d.ts",

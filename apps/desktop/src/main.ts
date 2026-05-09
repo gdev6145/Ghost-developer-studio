@@ -90,7 +90,7 @@ function resolveRendererEntry(): string {
 
 // ─── App Lifecycle ────────────────────────────────────────────────────────────
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   createWindow()
   setupMenu()
   setupIpcHandlers()
@@ -134,7 +134,7 @@ function setupIpcHandlers(): void {
    * Returns directory listing for a local path.
    */
   ipcMain.handle('read-directory', async (_event, dirPath: string) => {
-    const { readdir, stat } = await import('fs/promises')
+    const { readdir } = await import('fs/promises')
     const safePath = sanitizePath(dirPath)
     const entries = await readdir(safePath, { withFileTypes: true })
     return entries.map(e => ({

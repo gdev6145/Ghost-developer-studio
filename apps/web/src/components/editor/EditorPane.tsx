@@ -8,10 +8,9 @@ import { CollaborativeEditorBinding } from '@ghost/editor'
 import { getLanguageFromPath } from '@ghost/shared'
 import { PreviewPane } from '@/components/preview/PreviewPane'
 import { getCurrentUserId } from '@/lib/session'
-import type * as monaco from 'monaco-editor'
 
-type MonacoEditorInstance = monaco.editor.IStandaloneCodeEditor
-type MonacoInstance = typeof monaco
+type MonacoEditorInstance = any
+type MonacoInstance = any
 
 // Dynamic import for Monaco (client-side only)
 const MonacoEditor = React.lazy(() =>

@@ -174,7 +174,7 @@ export function TaskOrchestratorPanel({
           />
           <button
             type="button"
-            onClick={startTask}
+            onClick={() => void startTask()}
             disabled={loading || !goal.trim()}
             className="self-end rounded-lg bg-violet-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -203,7 +203,7 @@ export function TaskOrchestratorPanel({
               {!isTerminal && (
                 <button
                   type="button"
-                  onClick={cancelTask}
+                  onClick={() => void cancelTask()}
                   className="shrink-0 rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300 hover:bg-red-900"
                 >
                   Cancel
@@ -249,7 +249,7 @@ export function TaskOrchestratorPanel({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={approveStep}
+                  onClick={() => void approveStep()}
                   disabled={loading}
                   className="rounded bg-green-700 px-3 py-1 text-xs font-medium text-white hover:bg-green-600 disabled:opacity-50"
                 >
@@ -257,7 +257,7 @@ export function TaskOrchestratorPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={rejectStep}
+                  onClick={() => void rejectStep()}
                   disabled={loading}
                   className="rounded bg-red-700 px-3 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
                 >

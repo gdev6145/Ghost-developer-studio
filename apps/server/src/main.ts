@@ -3,7 +3,7 @@ import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import { Server as SocketIOServer } from 'socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
-import { createClient } from 'ioredis'
+import Redis from 'ioredis'
 import { validateServerEnv } from '@ghost/config'
 import { eventBus } from '@ghost/events'
 import { db } from '@ghost/database'
@@ -108,11 +108,11 @@ async function bootstrap(): Promise<void> {
   // ─── Request / Response metrics hook ─────────────────────────────────────
 
   app.addHook('onRequest', async (req) => {
-    ;(req as Record<string, unknown>)['_startTime'] = Date.now()
+    ;((req as unknown) as Record<string, unknown>)['_startTime'] = Date.now()
   })
 
   app.addHook('onResponse', async (req, reply) => {
-    const startTime = (req as Record<string, unknown>)['_startTime'] as number | undefined
+    const startTime = ((req as unknown) as Record<string, unknown>)['_startTime'] as number | undefined
     const durationMs = startTime ? Date.now() - startTime : 0
     const route = req.routeOptions?.url ?? req.url ?? 'unknown'
     const method = req.method
@@ -153,13 +153,13 @@ async function bootstrap(): Promise<void> {
   // ─── Metrics endpoint (Prometheus exposition format) ──────────────────────
 
   app.get('/metrics', async (_req, reply) => {
-    reply.header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
+    void reply.header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
     return registry.prometheusFormat()
   })
 
   // ─── Redis ───────────────────────────────────────────────────────────────
 
-  const pubClient = createClient(env.REDIS_URL)
+  const pubClient = new Redis(env.REDIS_URL)
   const subClient = pubClient.duplicate()
 
   await Promise.all([pubClient.connect(), subClient.connect()])
@@ -172,7 +172,7 @@ async function bootstrap(): Promise<void> {
   // Persist all domain events into the rolling Redis window + event log
   // and dispatch to plugin event subscribers
   eventBus.onAny(event => {
-    void memory.push(event)
+    void memory.push(event as any)
     // Dispatch to plugin subscribers
     void pluginRegistry.dispatch(event.type, event.payload, {
       workspaceId: event.workspaceId,
@@ -199,7 +199,7 @@ async function bootstrap(): Promise<void> {
         payload: event.payload as Record<string, unknown>,
         timestamp: new Date(event.timestamp),
       },
-    }).catch(err => {
+    }).catch((err: unknown) => {
       app.log.error({ err, eventId: event.id }, 'Failed to persist event to database')
     })
   })
@@ -227,8 +227,8 @@ async function bootstrap(): Promise<void> {
 
   // ─── Socket.IO ───────────────────────────────────────────────────────────
 
-  const io = new SocketIOServer(app.server, {
-    adapter: createAdapter(pubClient, subClient) as Parameters<typeof io.adapter>[0],
+  const io: SocketIOServer = new SocketIOServer(app.server, {
+    adapter: createAdapter(pubClient, subClient) as any,
     cors: {
       origin: corsOrigin === true ? '*' : corsOrigin,
       methods: ['GET', 'POST'],

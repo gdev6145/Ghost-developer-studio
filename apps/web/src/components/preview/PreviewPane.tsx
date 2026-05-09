@@ -50,7 +50,7 @@ export function PreviewPane() {
           <button
             onClick={() => {
               if (iframeRef.current) {
-                iframeRef.current.src = iframeRef.current.src
+                iframeRef.current.contentWindow?.location.reload()
                 setIsLoading(true)
               }
             }}

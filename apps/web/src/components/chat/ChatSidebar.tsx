@@ -122,12 +122,12 @@ export function ChatSidebar({ workspaceId, collab }: ChatSidebarProps) {
             return (
               <div key={msg.id} className="flex gap-2 items-start group">
                 <Avatar
-                  src={msg.author.avatarUrl}
                   displayName={msg.author.displayName}
                   color={color}
                   size="sm"
                   showBadge
                   badgeColor={presenceMap.get(msg.authorId)?.status === 'online' ? '#22C55E' : '#6B7280'}
+                  {...(msg.author.avatarUrl ? { src: msg.author.avatarUrl } : {})}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-1.5">

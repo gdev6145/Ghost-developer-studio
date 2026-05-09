@@ -1,7 +1,15 @@
 import Dockerode from 'dockerode'
-import type { EventDispatcher } from '@ghost/events'
 import type { RuntimeState } from '@ghost/protocol'
 import { now } from '@ghost/shared'
+
+interface EventDispatcherLike {
+  dispatch: (
+    type: string,
+    workspaceId: string,
+    payload: Record<string, unknown>,
+    actorId?: string
+  ) => Promise<unknown>
+}
 
 export interface StartContainerOptions {
   workspaceId: string
@@ -33,7 +41,7 @@ export class RuntimeManager {
   private readonly containers = new Map<string, string>()
 
   constructor(
-    private readonly events: EventDispatcher,
+    private readonly events: EventDispatcherLike,
     dockerOptions?: Dockerode.DockerOptions
   ) {
     this.docker = new Dockerode(
@@ -111,15 +119,16 @@ export class RuntimeManager {
 
       return state
     } catch (error) {
-      const err = error as Error
+      const err = error instanceof Error ? error : new Error('Unknown runtime error')
       await this.events.dispatch('runtime.error', workspaceId, {
         message: err.message,
       })
-      return {
+      const failureState: RuntimeState = {
         workspaceId,
         status: 'error',
         buildLogs: [err.message],
       }
+      return failureState
     }
   }
 

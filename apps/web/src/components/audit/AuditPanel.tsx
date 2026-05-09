@@ -48,7 +48,7 @@ export function AuditPanel({ workspaceId, apiUrl, token }: AuditPanelProps) {
         if (typeFilter) params.set('type', typeFilter)
         if (cursor) params.set('cursor', cursor)
 
-        const res = await fetch(`${apiUrl}/api/audit/${workspaceId}?${params}`, {
+        const res = await fetch(`${apiUrl}/api/audit/${workspaceId}?${params.toString()}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) throw new Error(await res.text())
@@ -99,7 +99,7 @@ export function AuditPanel({ workspaceId, apiUrl, token }: AuditPanelProps) {
         <h2 className="text-sm font-semibold text-zinc-200">Audit Log</h2>
         <button
           type="button"
-          onClick={handleExport}
+          onClick={() => void handleExport()}
           disabled={exporting}
           className="rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:opacity-50"
         >

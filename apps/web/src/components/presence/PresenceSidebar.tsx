@@ -59,7 +59,6 @@ export function PresenceSidebar() {
               className="flex items-center gap-2 px-3 py-2 hover:bg-ghost-overlay transition-colors"
             >
               <Avatar
-                src={member.user.avatarUrl}
                 displayName={member.user.displayName}
                 color={color}
                 size="sm"
@@ -67,6 +66,7 @@ export function PresenceSidebar() {
                 badgeColor={
                   status === 'online' ? '#22C55E' : status === 'idle' ? '#F59E0B' : '#6B7280'
                 }
+                {...(member.user.avatarUrl ? { src: member.user.avatarUrl } : {})}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
