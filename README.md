@@ -277,14 +277,14 @@ Contributions are welcome as the project evolves. You can contribute by:
 
 ## Future Roadmap
 
-All roadmap capabilities have been implemented:
+Planned next milestones for Ghost Developer Studio:
 
-- **AI pair programming** ✅ — OpenAI-powered code completion, explanation, review, and chat via `POST /api/ai/:workspaceId/{complete,explain,review,chat}`
-- **Session replay** ✅ — all domain events persisted to PostgreSQL; replay endpoint streams NDJSON at `GET /api/replay/:workspaceId/stream`
-- **Collaborative debugging** ✅ — shared breakpoints broadcast via Socket.IO `debug.breakpoint.set / debug.breakpoint.clear`; all members see the same debug state
-- **Branch visualization** ✅ — real-time git graph with commit history, branch list, and branch creation via `GET /api/git/:workspaceId/log`
-- **Multiplayer terminals** ✅ — PTY sessions over Socket.IO using `node-pty`; any workspace member can type and all see the same output
-- **Workspace memory** ✅ — Redis sorted-set rolling window (last 100 events, 24-hour TTL) injected as context into every AI request
+- **Production readiness and ops** — environment hardening, structured observability, and deployment profiles for cloud environments
+- **Enterprise identity and access** — SSO/SAML/OIDC, workspace-level RBAC, and audit trails for collaboration and runtime actions
+- **Collaboration quality upgrades** — richer review workflows, conflict-resolution UX, and stronger offline/reconnect behavior
+- **AI workflow expansion** — project-aware assistants, task orchestration, and safer guardrails for automated edits
+- **Desktop parity and local integrations** — deeper native filesystem/runtime controls and feature parity with the web experience
+- **Extensibility platform** — plugin APIs, event hooks, and integration surfaces for external tools and internal automation
 
 ---
 
