@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ghost Developer Studio</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self'; script-src 'self'; frame-src http: https:; connect-src http: https:;"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>Ghost Developer Studio</span>
+      </div>
+      <nav class="nav">
+        <button data-route="/">Home</button>
+        <button data-route="/workspace">Workspaces</button>
+        <button data-route="/workspace/demo">Editor</button>
+      </nav>
+      <div class="meta">
+        <span id="platform">desktop</span>
+      </div>
+    </header>
+    <main class="main">
+      <iframe id="studio" title="Ghost Studio" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>

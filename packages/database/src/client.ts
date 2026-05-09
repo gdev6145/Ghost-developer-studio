@@ -1,25 +1,26 @@
-import { PrismaClient } from '../generated'
+import { Prisma, PrismaClient } from '../generated'
 
 // ─── Singleton Prisma Client ─────────────────────────────────────────────────
 // In development, a module-level singleton prevents creating too many
 // connections during hot-reloads.
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __prisma: PrismaClient | undefined
+type GlobalWithPrisma = typeof globalThis & {
+  __prisma?: PrismaClient
 }
 
+const globalForPrisma = globalThis as GlobalWithPrisma
+
+const prismaLogLevels: Prisma.LogLevel[] =
+  process.env['NODE_ENV'] === 'development' ? ['query', 'warn', 'error'] : ['warn', 'error']
+
 export const db: PrismaClient =
-  global.__prisma ??
+  globalForPrisma.__prisma ??
   new PrismaClient({
-    log:
-      process.env['NODE_ENV'] === 'development'
-        ? ['query', 'warn', 'error']
-        : ['warn', 'error'],
+    log: prismaLogLevels,
   })
 
 if (process.env['NODE_ENV'] !== 'production') {
-  global.__prisma = db
+  globalForPrisma.__prisma = db
 }
 
 export { PrismaClient }

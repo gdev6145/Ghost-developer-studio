@@ -1,5 +1,4 @@
 import type { GhostEvent, GhostEventType } from '@ghost/protocol'
-import { generateId, now } from '@ghost/shared'
 
 type EventHandler<T extends GhostEvent = GhostEvent> = (event: T) => void | Promise<void>
 
@@ -53,7 +52,8 @@ export class EventDispatcher {
    * Emit an event. Handlers are called in parallel.
    */
   async emit(event: GhostEvent): Promise<void> {
-    const handlers = this.handlers.get(event.type) ?? new Set()
+    const eventType = (event as GhostEvent & { type: GhostEventType }).type
+    const handlers = this.handlers.get(eventType) ?? new Set()
     const all = [...handlers, ...this.wildcardHandlers]
     await Promise.allSettled(all.map(h => h(event)))
   }
@@ -68,11 +68,11 @@ export class EventDispatcher {
     actorId?: string
   ): Promise<GhostEvent> {
     const event: GhostEvent = {
-      id: generateId(),
+      id: crypto.randomUUID(),
       type,
       workspaceId,
       ...(actorId !== undefined ? { actorId } : {}),
-      timestamp: now(),
+      timestamp: new Date().toISOString(),
       payload,
     }
     await this.emit(event)

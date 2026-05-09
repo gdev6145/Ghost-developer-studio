@@ -1,0 +1,75 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0b0b14;
+  color: #f4f4ff;
+}
+
+.topbar {
+  height: 52px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #26263d;
+  background: #101021;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #a855f7;
+  box-shadow: 0 0 0 6px rgba(168, 85, 247, 0.2);
+}
+
+.nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav button {
+  background: #1a1a32;
+  color: #e5e7eb;
+  border: 1px solid #2f2f4d;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.nav button:hover {
+  border-color: #a855f7;
+}
+
+.meta {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.main {
+  height: calc(100vh - 52px);
+}
+
+#studio {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #0b0b14;
+}

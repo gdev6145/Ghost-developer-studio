@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron'
+import { existsSync } from 'fs'
 import * as path from 'path'
 import isDev from 'electron-is-dev'
 
@@ -40,11 +41,10 @@ function createWindow(): void {
     },
   })
 
-  const rendererUrl = isDev
-    ? 'http://localhost:3001'
-    : `file://${path.join(__dirname, '../renderer/index.html')}`
-
-  void mainWindow.loadURL(rendererUrl)
+  const rendererEntry = resolveRendererEntry()
+  const shellUrl = new URL(`file://${rendererEntry}`)
+  shellUrl.searchParams.set('studioBaseUrl', getStudioBaseUrl())
+  void mainWindow.loadURL(shellUrl.toString())
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
@@ -60,6 +60,32 @@ function createWindow(): void {
     void shell.openExternal(url)
     return { action: 'deny' }
   })
+}
+
+function getStudioBaseUrl(): string {
+  const candidate = process.env['GHOST_DESKTOP_WEB_URL'] ?? 'http://localhost:3000'
+  try {
+    const parsed = new URL(candidate)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return 'http://localhost:3000'
+    }
+    return parsed.toString().replace(/\/$/, '')
+  } catch {
+    return 'http://localhost:3000'
+  }
+}
+
+function resolveRendererEntry(): string {
+  const candidates = [
+    path.join(app.getAppPath(), 'renderer', 'index.html'),
+    path.join(__dirname, 'renderer', 'index.html'),
+    path.join(__dirname, '../renderer/index.html'),
+  ]
+  const existing = candidates.find(candidate => existsSync(candidate))
+  if (!existing) {
+    throw new Error('Desktop renderer entry not found')
+  }
+  return existing
 }
 
 // ─── App Lifecycle ────────────────────────────────────────────────────────────

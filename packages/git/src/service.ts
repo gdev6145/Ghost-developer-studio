@@ -1,6 +1,14 @@
 import simpleGit, { type SimpleGit } from 'simple-git'
-import type { EventDispatcher } from '@ghost/events'
-import { now } from '@ghost/shared'
+import type { GhostEventType } from '@ghost/protocol'
+
+interface EventDispatcherLike {
+  dispatch: (
+    type: GhostEventType,
+    workspaceId: string,
+    payload: Record<string, unknown>,
+    actorId?: string
+  ) => Promise<unknown>
+}
 
 export interface CloneOptions {
   url: string
@@ -40,7 +48,7 @@ export interface BranchOptions {
  *  - status
  */
 export class GitService {
-  constructor(private readonly events: EventDispatcher) {}
+  constructor(private readonly events: EventDispatcherLike) {}
 
   private git(repoPath: string): SimpleGit {
     return simpleGit(repoPath)
@@ -73,7 +81,7 @@ export class GitService {
   /**
    * Pull latest changes from origin.
    */
-  async pull(repoPath: string, workspaceId: string): Promise<void> {
+  async pull(repoPath: string, _workspaceId: string): Promise<void> {
     await this.git(repoPath).pull()
   }
 
@@ -93,7 +101,7 @@ export class GitService {
    * Stage files and create a commit.
    */
   async commit(options: CommitOptions): Promise<string> {
-    const { workspaceId, repoPath, message, authorName, authorEmail, files } = options
+    const { repoPath, message, authorName, authorEmail, files } = options
     const g = this.git(repoPath)
 
     await g.addConfig('user.name', authorName)
