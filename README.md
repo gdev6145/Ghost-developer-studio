@@ -285,6 +285,16 @@ Planned next milestones for Ghost Developer Studio:
 - **AI workflow expansion** — project-aware assistants, task orchestration, and safer guardrails for automated edits
 - **Desktop parity and local integrations** — deeper native filesystem/runtime controls and feature parity with the web experience
 - **Extensibility platform** — plugin APIs, event hooks, and integration surfaces for external tools and internal automation
+- **Voice and video collaboration** — embedded audio/video channels tied to workspace rooms, enabling hands-free pair programming without leaving the studio
+- **Integrated CI/CD pipeline editor** — visual pipeline builder with live run status, log streaming, and one-click re-runs linked directly to workspace branches
+- **Code intelligence and LSP support** — project-wide semantic search, go-to-definition, find-all-references, and hover documentation powered by Language Server Protocol
+- **Workspace snapshots and environment forking** — point-in-time workspace snapshots that can be forked for safe experimentation or shared as reproducible bug reports
+- **Multi-cloud runtime targets** — deploy preview containers to AWS ECS, GCP Cloud Run, or Azure Container Apps in addition to local Docker
+- **Dependency and vulnerability scanning** — built-in SBOM generation and CVE scanning surfaced inline as developers add or update packages
+- **Performance profiling integration** — embedded flamegraph, memory heap, and CPU profiler views linked to live running containers for in-context performance tuning
+- **Mobile companion app** — lightweight iOS/Android app for reviewing diffs, approving pull requests, monitoring runtime status, and reading workspace chat on the go
+- **Structured code review workflows** — formal review rounds with inline comment threads, resolution tracking, approval gates, and merge-queue integration
+- **Workspace templates and starter kits** — curated project templates that spin up fully configured environments (language, framework, toolchain, Docker services) in one click
 
 ---
 
