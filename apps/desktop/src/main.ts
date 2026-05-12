@@ -18,7 +18,7 @@ import isDev from 'electron-is-dev'
  */
 
 let mainWindow: BrowserWindow | null = null
-const DEFAULT_DESKTOP_WEB_URL = 'http://localhost:3000'
+const DEFAULT_DESKTOP_DEV_WEB_URL = 'http://localhost:3000'
 const desktopShellPath = path.join(__dirname, '../renderer/index.html')
 
 function createWindow(): void {
@@ -77,14 +77,16 @@ async function loadRenderer(window: BrowserWindow): Promise<void> {
 
 function resolveDesktopWebUrl(): string | null {
   const configuredUrl = process.env['GHOST_DESKTOP_WEB_URL']?.trim()
-  const fallbackUrl = isDev ? DEFAULT_DESKTOP_WEB_URL : null
+  const fallbackUrl = isDev ? DEFAULT_DESKTOP_DEV_WEB_URL : null
   const candidateUrl = configuredUrl || fallbackUrl
 
   if (!candidateUrl) return null
 
   const parsedUrl = new URL(candidateUrl)
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-    throw new Error('GHOST_DESKTOP_WEB_URL must use http:// or https://')
+    throw new Error(
+      'GHOST_DESKTOP_WEB_URL must be a valid HTTP or HTTPS URL (for example http://localhost:3000 or https://studio.example.com)'
+    )
   }
 
   return parsedUrl.toString()
