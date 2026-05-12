@@ -16,8 +16,9 @@
   "scripts": {
     "build": "prisma generate && tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --declaration --declarationMap false --outDir dist",
     "dev": "tsup src/index.ts --format cjs,esm --watch",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
+    "typecheck": "prisma generate && tsc --noEmit",
+    "lint": "prisma generate && eslint src --ext .ts",
+    "dev": "tsup src/index.ts --format cjs,esm --watch",
     "clean": "rm -rf dist *.tsbuildinfo",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

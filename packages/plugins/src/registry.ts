@@ -5,8 +5,13 @@
  * Plugins are registered at server startup and can be dynamically loaded/unloaded.
  */
 
-import type { GhostPlugin, PluginContext, PluginEventSubscriber } from './types'
-import type { PluginCommand, PluginPanel } from './types'
+import type {
+  GhostPlugin,
+  PluginCommand,
+  PluginContext,
+  PluginEventSubscriber,
+  PluginPanel,
+} from './types'
 
 export class PluginRegistry {
   private readonly plugins = new Map<string, GhostPlugin>()

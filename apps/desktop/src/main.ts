@@ -18,6 +18,8 @@ import isDev from 'electron-is-dev'
  */
 
 let mainWindow: BrowserWindow | null = null
+const DEFAULT_DESKTOP_DEV_WEB_URL = 'http://localhost:3000'
+const desktopShellPath = path.join(__dirname, '../renderer/index.html')
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -40,11 +42,7 @@ function createWindow(): void {
     },
   })
 
-  const rendererUrl = isDev
-    ? 'http://localhost:3001'
-    : `file://${path.join(__dirname, '../renderer/index.html')}`
-
-  void mainWindow.loadURL(rendererUrl)
+  void loadRenderer(mainWindow)
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
@@ -60,6 +58,38 @@ function createWindow(): void {
     void shell.openExternal(url)
     return { action: 'deny' }
   })
+}
+
+async function loadRenderer(window: BrowserWindow): Promise<void> {
+  const webUrl = resolveDesktopWebUrl()
+
+  if (webUrl) {
+    try {
+      await window.loadURL(webUrl)
+      return
+    } catch (error) {
+      console.error(`Failed to load desktop web studio at ${webUrl}; falling back to bundled shell.`, error)
+    }
+  }
+
+  await window.loadFile(desktopShellPath)
+}
+
+function resolveDesktopWebUrl(): string | null {
+  const configuredUrl = process.env['GHOST_DESKTOP_WEB_URL']?.trim()
+  const fallbackUrl = isDev ? DEFAULT_DESKTOP_DEV_WEB_URL : null
+  const candidateUrl = configuredUrl || fallbackUrl
+
+  if (!candidateUrl) return null
+
+  const parsedUrl = new URL(candidateUrl)
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error(
+      'GHOST_DESKTOP_WEB_URL must be a valid HTTP or HTTPS URL (for example http://localhost:3000 or https://studio.example.com). Verify that the URL is configured correctly and that the web studio is reachable.'
+    )
+  }
+
+  return parsedUrl.toString()
 }
 
 // ─── App Lifecycle ────────────────────────────────────────────────────────────

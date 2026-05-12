@@ -30,12 +30,11 @@ export const COLLABORATOR_COLORS = [
   '#BB8FCE',
   '#82E0AA',
 ] as const
+const DEFAULT_COLLABORATOR_COLOR = '#FF6B6B'
 
 export type CollaboratorColor = (typeof COLLABORATOR_COLORS)[number]
 
 export const getCollaboratorColor = (userId: string): string => {
-  const fallbackColor = '#6B7280'
-
   let hash = 0
   for (let i = 0; i < userId.length; i++) {
     const char = userId.charCodeAt(i)
@@ -43,7 +42,7 @@ export const getCollaboratorColor = (userId: string): string => {
     hash |= 0 // Convert to 32bit integer
   }
   const index = Math.abs(hash) % COLLABORATOR_COLORS.length
-  return COLLABORATOR_COLORS[index] ?? COLLABORATOR_COLORS[0] ?? fallbackColor
+  return COLLABORATOR_COLORS[index] ?? DEFAULT_COLLABORATOR_COLOR
 }
 
 /**
