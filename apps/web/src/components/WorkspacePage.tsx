@@ -211,7 +211,23 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       collab.destroy()
       socket.disconnect()
     }
-  }, [workspaceId])
+  }, [
+    workspaceId,
+    setWorkspace,
+    setFiles,
+    setMessages,
+    addMember,
+    removeMember,
+    updatePresence,
+    removePresence,
+    addMessage,
+    applyRuntimeState,
+    appendLog,
+    setPreviewUrl,
+    appendTerminalOutput,
+    closeTerminalSession,
+    setDebugBreakpoints,
+  ])
 
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'
   const token = getSessionToken()
