@@ -1,5 +1,4 @@
-import jwt from 'jsonwebtoken'
-import type { User } from '@ghost/protocol'
+import { decode, sign, verify, type SignOptions } from 'jsonwebtoken'
 
 // ─── JWT Token Payload ───────────────────────────────────────────────────────
 
@@ -11,6 +10,12 @@ export interface JwtPayload {
   exp?: number
 }
 
+export interface JwtSubject {
+  id: string
+  email: string
+  username: string
+}
+
 // ─── Sign & Verify ───────────────────────────────────────────────────────────
 
 /**
@@ -18,16 +23,16 @@ export interface JwtPayload {
  * The caller is responsible for passing the secret from env config.
  */
 export function signToken(
-  user: Pick<User, 'id' | 'email' | 'username'>,
+  user: JwtSubject,
   secret: string,
-  expiresIn = '7d'
+  expiresIn: SignOptions['expiresIn'] = '7d'
 ): string {
   const payload: JwtPayload = {
     sub: user.id,
     email: user.email,
     username: user.username,
   }
-  return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions)
+  return sign(payload, secret, { expiresIn })
 }
 
 /**
@@ -35,7 +40,12 @@ export function signToken(
  * Throws if the token is invalid or expired.
  */
 export function verifyToken(token: string, secret: string): JwtPayload {
-  return jwt.verify(token, secret) as JwtPayload
+  const verified: unknown = verify(token, secret)
+  if (!isJwtPayload(verified)) {
+    throw new Error('Invalid token payload')
+  }
+
+  return verified
 }
 
 /**
@@ -43,9 +53,8 @@ export function verifyToken(token: string, secret: string): JwtPayload {
  * Useful for extracting userId from expired tokens in reconnect flows.
  */
 export function decodeToken(token: string): JwtPayload | null {
-  const decoded = jwt.decode(token)
-  if (!decoded || typeof decoded === 'string') return null
-  return decoded as JwtPayload
+  const decodedValue: unknown = decode(token)
+  return isJwtPayload(decodedValue) ? decodedValue : null
 }
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
@@ -88,5 +97,19 @@ function parseCookies(cookieHeader: string): Record<string, string> {
       const [k, ...rest] = c.trim().split('=')
       return [k?.trim() ?? '', rest.join('=').trim()]
     })
+  )
+}
+
+function isJwtPayload(value: unknown): value is JwtPayload {
+  if (!value || typeof value !== 'object') return false
+
+  const candidate = value as Record<string, unknown>
+
+  return (
+    typeof candidate['sub'] === 'string' &&
+    typeof candidate['email'] === 'string' &&
+    typeof candidate['username'] === 'string' &&
+    (candidate['iat'] === undefined || typeof candidate['iat'] === 'number') &&
+    (candidate['exp'] === undefined || typeof candidate['exp'] === 'number')
   )
 }
