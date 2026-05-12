@@ -24,7 +24,6 @@ module.exports = {
     '@typescript-eslint/no-unsafe-argument': 'warn',
     '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
     '@typescript-eslint/no-redundant-type-constituents': 'warn',
-    'react-hooks/exhaustive-deps': 'off',
   },
   overrides: [
     {
