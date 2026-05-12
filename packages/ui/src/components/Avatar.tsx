@@ -84,10 +84,10 @@ export const AvatarGroup: React.FC<AvatarGroupProps> = ({ users, max = 4, size =
       {visible.map(user => (
         <div key={user.userId} className="ring-2 ring-[#1E1E2E] rounded-full">
           <Avatar
-            src={user.avatarUrl}
             displayName={user.displayName}
-            color={user.color}
             size={size}
+            {...(user.avatarUrl ? { src: user.avatarUrl } : {})}
+            {...(user.color ? { color: user.color } : {})}
           />
         </div>
       ))}

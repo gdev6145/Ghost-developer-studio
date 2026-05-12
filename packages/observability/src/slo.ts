@@ -5,7 +5,7 @@
  * These are evaluated against the metrics registry and surfaced on /health.
  */
 
-import { httpRequestDuration, wsMessagesTotal, errorTotal, registry } from './metrics'
+import { registry } from './metrics'
 
 export interface SloDefinition {
   name: string

@@ -22,7 +22,7 @@ interface TerminalStore {
   setActiveTerminal: (terminalId: string | null) => void
 }
 
-export const useTerminalStore = create<TerminalStore>((set, get) => ({
+export const useTerminalStore = create<TerminalStore>((set, _get) => ({
   sessions: new Map(),
   activeTerminalId: null,
 
@@ -55,7 +55,11 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
       const session = state.sessions.get(terminalId)
       if (!session) return state
       const next = new Map(state.sessions)
-      next.set(terminalId, { ...session, closed: true, exitCode })
+      next.set(terminalId, {
+        ...session,
+        closed: true,
+        ...(exitCode === undefined ? {} : { exitCode }),
+      })
       return { sessions: next }
     })
   },

@@ -30,6 +30,7 @@ export const COLLABORATOR_COLORS = [
   '#BB8FCE',
   '#82E0AA',
 ] as const
+const DEFAULT_COLLABORATOR_COLOR = '#FF6B6B'
 
 export type CollaboratorColor = (typeof COLLABORATOR_COLORS)[number]
 
@@ -41,7 +42,7 @@ export const getCollaboratorColor = (userId: string): string => {
     hash |= 0 // Convert to 32bit integer
   }
   const index = Math.abs(hash) % COLLABORATOR_COLORS.length
-  return COLLABORATOR_COLORS[index] ?? COLLABORATOR_COLORS[0]!
+  return COLLABORATOR_COLORS[index] ?? DEFAULT_COLLABORATOR_COLOR
 }
 
 /**
@@ -61,12 +62,12 @@ export const sleep = (ms: number): Promise<void> =>
  * Returns a function that delays invoking `fn` until after `wait` ms
  * have elapsed since the last time the debounced function was invoked.
  */
-export function debounce<T extends (...args: unknown[]) => unknown>(
-  fn: T,
+export function debounce<TArgs extends unknown[], TResult>(
+  fn: (...args: TArgs) => TResult,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let timer: ReturnType<typeof setTimeout> | null = null
-  return function (...args: Parameters<T>) {
+  return function (...args: TArgs) {
     if (timer !== null) clearTimeout(timer)
     timer = setTimeout(() => {
       fn(...args)
@@ -78,12 +79,12 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  * Throttle a function call.
  * Returns a function that invokes `fn` at most once per `limit` ms.
  */
-export function throttle<T extends (...args: unknown[]) => unknown>(
-  fn: T,
+export function throttle<TArgs extends unknown[], TResult>(
+  fn: (...args: TArgs) => TResult,
   limit: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let inThrottle = false
-  return function (...args: Parameters<T>) {
+  return function (...args: TArgs) {
     if (!inThrottle) {
       fn(...args)
       inThrottle = true
