@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "prisma generate && tsup src/index.ts --format cjs,esm --dts",
+    "build": "prisma generate && tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --declaration --declarationMap false --outDir dist",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "typecheck": "prisma generate && tsc --noEmit",
     "lint": "prisma generate && eslint src --ext .ts",

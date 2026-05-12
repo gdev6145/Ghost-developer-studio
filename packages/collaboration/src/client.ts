@@ -1,7 +1,6 @@
 import type { Socket } from 'socket.io-client'
 import type {
   WsDocumentUpdate,
-  WsDocumentSync,
   WsPresenceUpdate,
   WsPresenceCursor,
   WsPresenceSelection,
@@ -128,7 +127,11 @@ export class CollaborationClient {
       workspaceId: this.workspaceId,
       actorId: this.actorId,
       timestamp: new Date().toISOString(),
-      payload: { userId: this.userId, displayName, avatarUrl },
+      payload: {
+        userId: this.userId,
+        displayName,
+        ...(avatarUrl ? { avatarUrl } : {}),
+      },
     }
     this.socket.emit('message', msg)
   }

@@ -123,7 +123,7 @@ export class AwarenessManager {
 
   private broadcastPresence(fileId: string, state: Partial<PresenceState>): void {
     if (!this.onBroadcast) return
-    const doc = this.getAwarenessDoc(fileId)
+    this.getAwarenessDoc(fileId)
     // Encode as a simple Yjs update payload
     const encoded = new TextEncoder().encode(JSON.stringify(state))
     this.onBroadcast(fileId, encoded)
