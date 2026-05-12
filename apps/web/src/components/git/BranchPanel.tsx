@@ -67,9 +67,10 @@ export function BranchPanel({ workspaceId, repoPath }: BranchPanelProps) {
           date: string
           message: string
           author_name: string
+          author_email?: string
           refs: string
         }> }
-        setCommits(data.commits)
+        setCommits(data.commits.map(commit => ({ ...commit, author_email: commit.author_email ?? '' })))
       }
     } catch (err) {
       setError((err as Error).message)

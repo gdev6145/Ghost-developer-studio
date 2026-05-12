@@ -6,6 +6,7 @@
  */
 
 import type { GhostPlugin, PluginContext, PluginEventSubscriber } from './types'
+import type { PluginCommand, PluginPanel } from './types'
 
 export class PluginRegistry {
   private readonly plugins = new Map<string, GhostPlugin>()
@@ -96,7 +97,7 @@ export class PluginRegistry {
   /**
    * Collect all commands from all registered plugins.
    */
-  getAllCommands(): Array<{ pluginId: string; command: import('./types').PluginCommand }> {
+  getAllCommands(): Array<{ pluginId: string; command: PluginCommand }> {
     const result = []
     for (const plugin of this.plugins.values()) {
       for (const command of plugin.commands ?? []) {
@@ -109,7 +110,7 @@ export class PluginRegistry {
   /**
    * Collect all UI panels from all registered plugins.
    */
-  getAllPanels(): Array<{ pluginId: string; panel: import('./types').PluginPanel }> {
+  getAllPanels(): Array<{ pluginId: string; panel: PluginPanel }> {
     const result = []
     for (const plugin of this.plugins.values()) {
       for (const panel of plugin.panels ?? []) {

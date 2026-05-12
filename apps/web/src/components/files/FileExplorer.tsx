@@ -106,7 +106,12 @@ function buildTree(files: FileNode[]): (FileNode & { children?: FileNode[] })[] 
   const map = new Map<string, FileNode & { children?: FileNode[] }>()
   const roots: (FileNode & { children?: FileNode[] })[] = []
 
-  files.forEach(f => map.set(f.id, { ...f, children: f.type === 'directory' ? [] : undefined }))
+  files.forEach(f =>
+    map.set(f.id, {
+      ...f,
+      ...(f.type === 'directory' ? { children: [] } : {}),
+    })
+  )
 
   files.forEach(f => {
     const node = map.get(f.id)!

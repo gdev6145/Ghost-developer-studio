@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { db } from '@ghost/database'
 import { verifyToken } from '@ghost/auth'
-import { now } from '@ghost/shared'
 
 /**
  * Session Replay routes — persist events then stream them back in order.

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { CollaborationClient, type ConnectionState } from '@ghost/collaboration'
+import type { Workspace, FileNode, ChatMessage } from '@ghost/protocol'
 import { useWorkspaceStore } from '@ghost/state'
 import { usePresenceStore } from '@ghost/state'
 import { useChatStore } from '@ghost/state'
@@ -125,7 +126,7 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
           email: '',
           username: payload.userId,
           displayName: payload.displayName,
-          avatarUrl: payload.avatarUrl,
+          ...(payload.avatarUrl !== undefined ? { avatarUrl: payload.avatarUrl } : {}),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -142,10 +143,12 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       updatePresence(userId, {
         userId,
         workspaceId,
-        activeFile: state['activeFile'] as string | undefined,
         status: (state['status'] as 'online' | 'idle' | 'offline') ?? 'online',
         color: state['color'] as string ?? '#6B7280',
         lastSeenAt: new Date().toISOString(),
+        ...((state['activeFile'] as string | undefined) !== undefined
+          ? { activeFile: state['activeFile'] as string }
+          : {}),
       })
     })
 
@@ -159,7 +162,7 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
           email: '',
           username: payload.authorId,
           displayName: payload.authorName,
-          avatarUrl: payload.authorAvatar,
+          ...(payload.authorAvatar !== undefined ? { avatarUrl: payload.authorAvatar } : {}),
           createdAt: payload.createdAt,
           updatedAt: payload.createdAt,
         },
@@ -171,8 +174,8 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
     collab.on('runtime:status', payload => {
       applyRuntimeState({
         status: payload.status,
-        containerId: payload.containerId,
-        previewUrl: payload.previewUrl,
+        ...(payload.containerId !== undefined ? { containerId: payload.containerId } : {}),
+        ...(payload.previewUrl !== undefined ? { previewUrl: payload.previewUrl } : {}),
       })
       if (payload.previewUrl) setPreviewUrl(payload.previewUrl)
     })
@@ -208,7 +211,7 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
       collab.destroy()
       socket.disconnect()
     }
-  }, [workspaceId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [workspaceId])
 
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'
   const token = getSessionToken()
@@ -366,9 +369,9 @@ export function WorkspacePage({ workspaceId }: WorkspacePageProps) {
 
 async function loadWorkspaceData(
   workspaceId: string,
-  setWorkspace: (w: Parameters<typeof setWorkspace>[0]) => void,
-  setFiles: (f: Parameters<typeof setFiles>[0]) => void,
-  setMessages: (m: Parameters<typeof setMessages>[0]) => void
+  setWorkspace: (workspace: Workspace | null) => void,
+  setFiles: (files: FileNode[]) => void,
+  setMessages: (messages: ChatMessage[]) => void
 ): Promise<void> {
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'
   const token = getSessionToken()
@@ -382,19 +385,18 @@ async function loadWorkspaceData(
     ])
 
     if (workspaceRes.ok) {
-      const ws = await workspaceRes.json() as Parameters<typeof setWorkspace>[0]
+      const ws = (await workspaceRes.json()) as Workspace
       setWorkspace(ws)
     }
     if (filesRes.ok) {
-      const files = await filesRes.json() as Parameters<typeof setFiles>[0]
+      const files = (await filesRes.json()) as FileNode[]
       setFiles(files)
     }
     if (chatRes.ok) {
-      const messages = await chatRes.json() as Parameters<typeof setMessages>[0]
+      const messages = (await chatRes.json()) as ChatMessage[]
       setMessages(messages)
     }
   } catch {
     // Graceful degradation – workspace still works offline
   }
 }
-

@@ -128,8 +128,8 @@ export async function registerAuditRoutes(app: FastifyInstance): Promise<void> {
         orderBy: { timestamp: 'asc' },
       })
 
-      reply.header('Content-Type', 'application/x-ndjson')
-      reply.header('Content-Disposition', `attachment; filename="audit-${workspaceId}.ndjson"`)
+      void reply.header('Content-Type', 'application/x-ndjson')
+      void reply.header('Content-Disposition', `attachment; filename="audit-${workspaceId}.ndjson"`)
       return reply.send(events.map(e => JSON.stringify(e)).join('\n') + '\n')
     }
   )

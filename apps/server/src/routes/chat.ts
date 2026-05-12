@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { db } from '@ghost/database'
 import { verifyToken } from '@ghost/auth'
-import { generateId } from '@ghost/shared'
 
 function getUserId(req: FastifyRequest): string | null {
   const token = req.headers.authorization?.replace('Bearer ', '')

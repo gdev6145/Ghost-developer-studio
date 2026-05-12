@@ -1,9 +1,10 @@
 import { WorkspacePage } from '@/components/WorkspacePage'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export default function Page({ params }: PageProps) {
-  return <WorkspacePage workspaceId={params.id} />
+export default async function Page({ params }: PageProps) {
+  const { id } = await params
+  return <WorkspacePage workspaceId={id} />
 }

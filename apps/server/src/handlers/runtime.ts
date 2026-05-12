@@ -1,6 +1,5 @@
 import type { Server as SocketIOServer } from 'socket.io'
 import type { EventDispatcher } from '@ghost/events'
-import { RuntimeManager } from '@ghost/runtime'
 import { now } from '@ghost/shared'
 import type { RuntimeState } from '@ghost/protocol'
 
