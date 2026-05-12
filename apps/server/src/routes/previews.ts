@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { generateId, now } from '@ghost/shared'
 import { requireWriteAccess, requireAdminAccess } from '../middleware/rbac'
-import { getUserId } from '../utils/auth'
 
 /**
  * Ephemeral Preview Environment routes.

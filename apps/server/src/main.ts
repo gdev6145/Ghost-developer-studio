@@ -152,9 +152,10 @@ async function bootstrap(): Promise<void> {
 
   // ─── Metrics endpoint (Prometheus exposition format) ──────────────────────
 
-  app.get('/metrics', async (_req, reply) => {
-    reply.header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
-    return registry.prometheusFormat()
+  app.get('/metrics', (_req, reply) => {
+    return reply
+      .header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
+      .send(registry.prometheusFormat())
   })
 
   // ─── Redis ───────────────────────────────────────────────────────────────

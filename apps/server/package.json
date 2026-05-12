@@ -5,7 +5,7 @@
   "description": "Ghost Developer Studio — Fastify backend with Socket.IO collaboration",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsup src/main.ts --format cjs --dts-resolve",
+    "build": "tsup src/main.ts --format cjs",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",

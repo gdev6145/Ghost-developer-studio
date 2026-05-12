@@ -130,7 +130,7 @@ export class CollaborationClient {
       payload: {
         userId: this.userId,
         displayName,
-        ...(avatarUrl ? { avatarUrl } : {}),
+        ...(avatarUrl !== undefined ? { avatarUrl } : {}),
       },
     }
     this.socket.emit('message', msg)

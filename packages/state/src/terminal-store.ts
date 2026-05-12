@@ -58,7 +58,7 @@ export const useTerminalStore = create<TerminalStore>((set, _get) => ({
       next.set(terminalId, {
         ...session,
         closed: true,
-        ...(exitCode === undefined ? {} : { exitCode }),
+        ...(exitCode !== undefined ? { exitCode } : {}),
       })
       return { sessions: next }
     })

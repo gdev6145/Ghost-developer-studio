@@ -1,4 +1,4 @@
-import * as Monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 import { MonacoBinding } from 'y-monaco'
 import type { CollaborationClient } from '@ghost/collaboration'
 
@@ -94,7 +94,12 @@ export class CollaborativeEditorBinding {
     const displayName = (state['displayName'] as string | undefined) ?? userId.slice(0, 8)
 
     this.cursorDecorations.set(userId, {
-      range: new Monaco.Range(line, column, line, column),
+      range: {
+        startLineNumber: line,
+        startColumn: column,
+        endLineNumber: line,
+        endColumn: column,
+      },
       options: {
         className: `ghost-cursor-${userId.slice(0, 8)}`,
         beforeContentClassName: `ghost-cursor-before`,

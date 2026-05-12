@@ -1,4 +1,19 @@
 import { PrismaClient } from '../generated'
+import type {
+  Branch,
+  ChatMessage,
+  Event,
+  File,
+  FileType,
+  Notification,
+  RuntimeState,
+  RuntimeStatus,
+  Session,
+  User,
+  Workspace,
+  WorkspaceMember,
+  WorkspaceRole,
+} from '../generated'
 
 // ─── Singleton Prisma Client ─────────────────────────────────────────────────
 // In development, a module-level singleton prevents creating too many
@@ -39,4 +54,4 @@ export type {
   Event,
   RuntimeState,
   RuntimeStatus,
-} from '../generated'
+}

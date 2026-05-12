@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { db } from '@ghost/database'
-import { getLanguageFromPath, generateId } from '@ghost/shared'
+import { getLanguageFromPath } from '@ghost/shared'
 import { requireWriteAccess } from '../middleware/rbac'
 import { getUserId } from '../utils/auth'
 

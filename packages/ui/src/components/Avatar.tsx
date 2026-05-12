@@ -86,8 +86,8 @@ export const AvatarGroup: React.FC<AvatarGroupProps> = ({ users, max = 4, size =
           <Avatar
             displayName={user.displayName}
             size={size}
-            {...(user.avatarUrl ? { src: user.avatarUrl } : {})}
-            {...(user.color ? { color: user.color } : {})}
+            {...(user.avatarUrl !== undefined ? { src: user.avatarUrl } : {})}
+            {...(user.color !== undefined ? { color: user.color } : {})}
           />
         </div>
       ))}

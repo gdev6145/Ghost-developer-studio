@@ -5,17 +5,10 @@ import type {
   WsMessage,
   WsDocumentUpdate,
   WsDocumentOpen,
-  WsPresenceCursor,
-  WsPresenceSelection,
-  WsPresenceUpdate,
   WsChatMessage,
-  WsWorkspaceJoin,
-  WsWorkspaceLeave,
-  WsRuntimeStart,
-  WsRuntimeStop,
 } from '@ghost/protocol'
 import { db } from '@ghost/database'
-import { generateId, now } from '@ghost/shared'
+import { now } from '@ghost/shared'
 
 /**
  * Collaboration WebSocket handler.

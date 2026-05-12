@@ -62,8 +62,8 @@ export const sleep = (ms: number): Promise<void> =>
  * Returns a function that delays invoking `fn` until after `wait` ms
  * have elapsed since the last time the debounced function was invoked.
  */
-export function debounce<TArgs extends unknown[], TResult>(
-  fn: (...args: TArgs) => TResult,
+export function debounce<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => unknown,
   wait: number
 ): (...args: TArgs) => void {
   let timer: ReturnType<typeof setTimeout> | null = null
@@ -79,8 +79,8 @@ export function debounce<TArgs extends unknown[], TResult>(
  * Throttle a function call.
  * Returns a function that invokes `fn` at most once per `limit` ms.
  */
-export function throttle<TArgs extends unknown[], TResult>(
-  fn: (...args: TArgs) => TResult,
+export function throttle<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => unknown,
   limit: number
 ): (...args: TArgs) => void {
   let inThrottle = false

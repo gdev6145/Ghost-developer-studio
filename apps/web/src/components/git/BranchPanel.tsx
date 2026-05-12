@@ -67,6 +67,7 @@ export function BranchPanel({ workspaceId, repoPath }: BranchPanelProps) {
           date: string
           message: string
           author_name: string
+          author_email?: string
           refs: string
         }> }
         setCommits(data.commits)

@@ -175,6 +175,9 @@ importers:
       '@xterm/xterm':
         specifier: ^5.5.0
         version: 5.5.0
+      monaco-editor:
+        specifier: 0.47.0
+        version: 0.47.0
       next:
         specifier: ^15.5.15
         version: 15.5.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
