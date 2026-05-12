@@ -85,7 +85,7 @@ function resolveDesktopWebUrl(): string | null {
   const parsedUrl = new URL(candidateUrl)
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
     throw new Error(
-      'GHOST_DESKTOP_WEB_URL must be a valid HTTP or HTTPS URL (for example http://localhost:3000 or https://studio.example.com)'
+      'GHOST_DESKTOP_WEB_URL must be a valid HTTP or HTTPS URL (for example http://localhost:3000 or https://studio.example.com). Verify that the URL is configured correctly and that the web studio is reachable.'
     )
   }
 
