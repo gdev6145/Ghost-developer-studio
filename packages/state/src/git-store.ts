@@ -5,7 +5,7 @@ export interface GitCommit {
   date: string
   message: string
   author_name: string
-  author_email: string
+  author_email?: string
   refs: string
 }
 
